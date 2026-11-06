@@ -109,4 +109,41 @@ if ($code < 200 || $code >= 300) {
     error_log('Airtable error ' . $code . ': ' . $resp);
     fail('Something went wrong on our end. Please call or text 904-350-0048.', 502);
 }
+$recordId = json_decode($resp, true)['records'][0]['id'] ?? null;
+
+// Confirmation email to the customer, from crew@ so replies come back to us
+$oneLine = fn($s) => trim(preg_replace('/[\r\n]+/', ' ', $s));
+$first = $oneLine(explode(' ', $name)[0]);
+$hasLogo = isset($fields['Logo file']);
+$body = "Hi $first,\n\n"
+    . "Thanks for reaching out to Standard Issue Shirt Co. We got your request for " . $oneLine($business) . " (" . implode(', ', $needs) . ") and we're on it.\n\n"
+    . "Here's what happens next:\n"
+    . "1. We clean up your logo and send you a free mockup within one business day.\n"
+    . "2. Your final price comes with the mockup. No setup fees, no surprises.\n"
+    . "3. Once you approve, we print here in Jacksonville and hand deliver in 7 to 10 days.\n\n"
+    . ($hasLogo ? "" : "Didn't get a chance to attach your logo? Just reply to this email with it. Any file works.\n\n")
+    . "Questions? Reply here or call or text 904-350-0048.\n\n"
+    . "Michael Brown\nStandard Issue Shirt Co.\nstandardissueshirt.com\n";
+$headers = implode("\r\n", [
+    'From: Standard Issue Shirt Co. <crew@standardissueshirt.com>',
+    'Reply-To: crew@standardissueshirt.com',
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+]);
+$subject = 'Got your request, ' . $first . '. Mockup coming within 1 business day';
+$sent = @mail($email, $subject, $body, $headers, '-fcrew@standardissueshirt.com');
+if (!$sent) error_log('Confirmation email failed for ' . $email);
+
+if ($sent && $recordId) {
+    $ch = curl_init('https://api.airtable.com/v0/' . BASE_ID . '/' . TABLE_ID . '/' . $recordId);
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => 'PATCH',
+        CURLOPT_POSTFIELDS => json_encode(['fields' => ['Auto-reply sent' => true]]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 10,
+        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token, 'Content-Type: application/json'],
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
+}
 echo json_encode(['ok' => true]);
