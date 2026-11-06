@@ -157,9 +157,9 @@ footer a{color:#fff}
       <div class="full"><label for="f-notes">Anything else we should know?</label><textarea id="f-notes" name="notes"></textarea></div>
       <div class="hp" aria-hidden="true"><label for="f-web">Leave this empty</label><input id="f-web" name="company_website" type="text" tabindex="-1" autocomplete="off"></div>
       <input type="hidden" name="src" id="f-src"><input type="hidden" name="t" id="f-t">
-      <div class="full"><div class="msg" id="formMsg" role="status" aria-live="polite"></div></div>
       <div class="full"><button class="cta submit" type="submit" id="f-submit">Send my order request</button></div>
     </form>
+    <div class="msg" id="formMsg" role="status" aria-live="polite" style="max-width:760px;margin-top:14px"></div>
     <p style="margin-top:16px;font-size:14px">Rather talk? Call or text <a href="tel:+19043500048">904-350-0048</a> or email <a href="mailto:crew@standardissueshirt.com">crew@standardissueshirt.com</a>.</p>
   </section>
 </main>
@@ -187,7 +187,7 @@ footer a{color:#fff}
       .then(function (d) {
         if (d.ok) {
           f.reset(); f.style.display = 'none';
-          show('ok', 'Got it. Thanks! We’ll email you a free mockup and final price within one business day.');
+          show('ok', 'Got it, thanks! Check your email for a confirmation. We’ll send your free mockup and final price within one business day.'); msg.scrollIntoView({behavior:'smooth',block:'center'});
         } else {
           show('err', (d.error || 'Something went wrong.') + ' You can also <a href="' + BACKUP + '" target="_blank" rel="noopener">use our backup form</a> or call 904-350-0048.');
         }
