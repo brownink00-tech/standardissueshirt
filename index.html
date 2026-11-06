@@ -157,6 +157,7 @@ footer a{color:#fff}
       <div class="full"><label for="f-notes">Anything else we should know?</label><textarea id="f-notes" name="notes"></textarea></div>
       <div class="hp" aria-hidden="true"><label for="f-web">Leave this empty</label><input id="f-web" name="company_website" type="text" tabindex="-1" autocomplete="off"></div>
       <input type="hidden" name="src" id="f-src"><input type="hidden" name="t" id="f-t">
+      <div class="full" id="f-ts"></div>
       <div class="full"><button class="cta submit" type="submit" id="f-submit">Send my order request</button></div>
     </form>
     <div class="msg" id="formMsg" role="status" aria-live="polite" style="max-width:760px;margin-top:14px"></div>
@@ -177,6 +178,14 @@ footer a{color:#fff}
   document.getElementById('f-src').value = src.slice(0, 40);
   document.getElementById('f-t').value = Math.floor(Date.now() / 1000);
   function show(type, html) { msg.className = 'msg ' + type; msg.innerHTML = html; }
+  // Cloudflare Turnstile ("not a robot" check): the site key comes from si-config.php via order.php
+  fetch('order.php?config=1').then(function (r) { return r.json(); }).then(function (c) {
+    if (!c.siteKey) return;
+    window.siTs = function () { turnstile.render('#f-ts', { sitekey: c.siteKey, theme: 'light' }); };
+    var s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=siTs&render=explicit'; s.async = true;
+    document.head.appendChild(s);
+  }).catch(function () {});
   f.addEventListener('submit', function (e) {
     e.preventDefault();
     if (!f.business.value.trim() || !f.name.value.trim() || !f.email.value.trim()) { show('err', 'Please fill in your business, name and email.'); return; }
@@ -189,6 +198,7 @@ footer a{color:#fff}
           f.reset(); f.style.display = 'none';
           show('ok', 'Got it, thanks! Check your email for a confirmation. We’ll send your free mockup and final price within one business day.'); msg.scrollIntoView({behavior:'smooth',block:'center'});
         } else {
+          if (window.turnstile) { try { turnstile.reset('#f-ts'); } catch (e) {} }
           show('err', (d.error || 'Something went wrong.') + ' You can also <a href="' + BACKUP + '" target="_blank" rel="noopener">use our backup form</a> or call 904-350-0048.');
         }
       })

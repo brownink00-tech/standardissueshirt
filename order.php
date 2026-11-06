@@ -7,6 +7,11 @@
  * The Airtable token is NOT stored in this repo. It lives in si-config.php,
  * one folder ABOVE public_html, so it is never served or committed:
  *   <?php return ['airtable_token' => 'pat....'];
+ *
+ * Optional Cloudflare Turnstile ("not a robot" check), same file:
+ *   'turnstile_site_key' => '0x4AAAA...',   // public, sent to the page
+ *   'turnstile_secret'   => '0x4AAAA...',   // private, checked here
+ * If the secret is missing, the form still works with the built-in spam traps only.
  */
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');
@@ -55,6 +60,16 @@ function fail($msg, $code = 400) {
     exit;
 }
 
+$cfgPath = dirname(__DIR__) . '/si-config.php';
+$cfg = is_file($cfgPath) ? (require $cfgPath) : [];
+
+// The page asks for the public Turnstile site key here (GET order.php?config=1).
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['config'])) {
+    header('Cache-Control: no-store');
+    echo json_encode(['siteKey' => trim((string)($cfg['turnstile_site_key'] ?? ''))]);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') fail('Method not allowed', 405);
 
 // Spam traps: hidden field must be empty, and the form must have been open > 3 seconds
@@ -62,10 +77,28 @@ if (!empty($_POST['company_website'])) { echo json_encode(['ok' => true]); exit;
 $started = (int)($_POST['t'] ?? 0);
 if ($started > 0 && (time() - $started) < 3) { echo json_encode(['ok' => true]); exit; }
 
-$cfgPath = dirname(__DIR__) . '/si-config.php';
-if (!is_file($cfgPath)) fail('Form is not configured yet', 503);
-$cfg = require $cfgPath;
-$token = $cfg['airtable_token'] ?? '';
+if (!$cfg) fail('Form is not configured yet', 503);
+
+// Cloudflare Turnstile check, once the secret is in si-config.php
+$tsSecret = trim((string)($cfg['turnstile_secret'] ?? ''));
+if ($tsSecret !== '') {
+    $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query([
+            'secret'   => $tsSecret,
+            'response' => (string)($_POST['cf-turnstile-response'] ?? ''),
+            'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '',
+        ]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 10,
+    ]);
+    $ts = json_decode((string)curl_exec($ch), true);
+    curl_close($ch);
+    if (empty($ts['success'])) fail('Please complete the security check and try again.');
+}
+
+$token = trim((string)($cfg['airtable_token'] ?? ''));
 if (!$token) fail('Form is not configured yet', 503);
 
 const BASE_ID  = 'appRVSSHWg3NVmkgq';
