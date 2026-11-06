@@ -140,7 +140,9 @@ if (in_array($locs, ['Front only', 'Front + Back', 'Not sure'], true)) $fields['
 if ($qty !== '' && ctype_digit($qty)) $fields['Estimated quantity'] = (int)$qty;
 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $needBy)) $fields['Need by'] = $needBy;
 
-$srcMap = ['flyer' => 'Flyer drop', 'postcard' => 'Flyer drop', 'letter' => 'Flyer drop', 'email' => 'Email campaign', 'referral' => 'Referral'];
+// One QR tag per piece type, e.g. standardissueshirt.com/?src=sample
+$srcMap = ['sample' => 'Sample drop', 'letter' => 'Letter drop', 'flyer' => 'Flyer drop', 'postcard' => 'Postcard drop',
+           'gbp' => 'Google profile', 'social' => 'Social', 'ads' => 'Google Ads', 'email' => 'Email campaign', 'referral' => 'Referral'];
 $fields['Source'] = $srcMap[strtolower($src)] ?? 'Other';
 $noteParts = [];
 if ($notes !== '') $noteParts[] = $notes;
@@ -163,18 +165,27 @@ if (!empty($_FILES['logo']['name']) && $_FILES['logo']['error'] === UPLOAD_ERR_O
     }
 }
 
-$payload = json_encode(['records' => [['fields' => $fields]], 'typecast' => true]);
-$ch = curl_init('https://api.airtable.com/v0/' . BASE_ID . '/' . TABLE_ID);
-curl_setopt_array($ch, [
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => $payload,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 20,
-    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token, 'Content-Type: application/json'],
-]);
-$resp = curl_exec($ch);
-$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+$saveRecord = function ($fields) use ($token) {
+    $ch = curl_init('https://api.airtable.com/v0/' . BASE_ID . '/' . TABLE_ID);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode(['records' => [['fields' => $fields]], 'typecast' => true]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token, 'Content-Type: application/json'],
+    ]);
+    $resp = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return [$code, $resp];
+};
+[$code, $resp] = $saveRecord($fields);
+// If Airtable won't add a new Source option, save the order anyway as "Other" (the exact tag stays in Notes)
+if ($code === 422 && $fields['Source'] !== 'Other') {
+    error_log('Airtable 422, retrying with Source=Other: ' . $resp);
+    $fields['Source'] = 'Other';
+    [$code, $resp] = $saveRecord($fields);
+}
 
 if ($code < 200 || $code >= 300) {
     error_log('Airtable error ' . $code . ': ' . $resp);
