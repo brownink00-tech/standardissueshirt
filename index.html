@@ -50,7 +50,26 @@ td.n{font-family:var(--body);font-weight:800;font-size:26px;width:120px}
 .perks{display:flex;flex-wrap:wrap;gap:8px 24px;font-family:var(--mono);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding-block:20px}
 .form{padding-block:28px 40px;border-top:3px solid var(--ink);margin-top:12px}
 .form p{margin:0 0 14px;max-width:640px}
-.form iframe{width:100%;height:1250px;border:1px solid var(--rule);background:transparent}
+.order{display:grid;grid-template-columns:1fr 1fr;gap:18px 20px;max-width:760px}
+.order .full{grid-column:1/-1}
+.order label,.order legend{display:block;font-family:var(--mono);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.order .req{color:var(--hi)}
+.order input[type=text],.order input[type=email],.order input[type=tel],.order input[type=number],.order input[type=date],.order select,.order textarea{width:100%;font:inherit;font-size:16px;padding:11px 12px;border:2px solid var(--ink);border-radius:0;background:#fff;color:var(--ink)}
+.order textarea{min-height:110px;resize:vertical}
+.order input:focus,.order select:focus,.order textarea:focus{outline:3px solid var(--hi);outline-offset:1px}
+.order fieldset{border:0;padding:0;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{font-family:var(--body);font-size:15px;font-weight:600;text-transform:none;letter-spacing:0;margin:0;border:2px solid var(--ink);padding:9px 12px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.chips input{accent-color:var(--olive);width:17px;height:17px;margin:0}
+.chips label:has(input:checked){background:var(--olive);border-color:var(--olive);color:#fff}
+.hint{font-size:13px;color:var(--muted);margin-top:5px}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.submit{border:0;cursor:pointer;font-size:16px;padding:15px 26px}
+.submit[disabled]{opacity:.6;cursor:wait}
+.msg{padding:14px 16px;font-weight:600;display:none}
+.msg.ok{display:block;background:var(--olive);color:#fff}
+.msg.err{display:block;border:2px solid #b3261e;color:#b3261e;background:#fff5f4}
+@media (max-width:640px){.order{grid-template-columns:1fr}}
 footer{background:var(--olive);color:#fff;font-size:14px}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:22px}
 footer a{color:#fff}
@@ -115,8 +134,33 @@ footer a{color:#fff}
   <section class="form" id="order" aria-labelledby="oh">
     <h2 id="oh">Start your order</h2>
     <p>Tell us what you need and upload your logo. We reply within one business day with a mockup and a final price. Prices are per piece at 24+ per design (12 piece minimum), plus sales tax. Pack prices good through Dec 15, 2026.</p>
-    <iframe title="Crew Pack order inquiry form" src="https://airtable.com/embed/appRVSSHWg3NVmkgq/pagGpG8DqMUcB5S2D/form" loading="lazy"></iframe>
-    <p style="margin-top:12px;font-size:14px">Form not loading? <a href="https://airtable.com/appRVSSHWg3NVmkgq/pagGpG8DqMUcB5S2D/form">Open it in a new tab</a>, call 904-350-0048, or email <a href="mailto:crew@standardissueshirt.com">crew@standardissueshirt.com</a>.</p>
+    <form class="order" id="orderForm" action="order.php" method="post" enctype="multipart/form-data" novalidate>
+      <div><label for="f-biz">Business name <span class="req">*</span></label><input id="f-biz" name="business" type="text" required autocomplete="organization"></div>
+      <div><label for="f-name">Your name <span class="req">*</span></label><input id="f-name" name="name" type="text" required autocomplete="name"></div>
+      <div><label for="f-email">Email <span class="req">*</span></label><input id="f-email" name="email" type="email" required autocomplete="email"></div>
+      <div><label for="f-phone">Phone</label><input id="f-phone" name="phone" type="tel" autocomplete="tel"></div>
+      <fieldset class="full"><legend>What do you need? <span class="req">*</span></legend>
+        <div class="chips">
+          <label><input type="checkbox" name="needs[]" value="Starter Crew Pack ($595)">Starter Crew Pack ($595)</label>
+          <label><input type="checkbox" name="needs[]" value="Premium Crew Pack ($850)">Premium Crew Pack ($850)</label>
+          <label><input type="checkbox" name="needs[]" value="Everyday Tees">Everyday Tees</label>
+          <label><input type="checkbox" name="needs[]" value="Premium Tees">Premium Tees</label>
+          <label><input type="checkbox" name="needs[]" value="Everyday Crewnecks">Everyday Crewnecks</label>
+          <label><input type="checkbox" name="needs[]" value="Premium Crewnecks">Premium Crewnecks</label>
+          <label><input type="checkbox" name="needs[]" value="Branded webstore">Branded webstore</label>
+          <label><input type="checkbox" name="needs[]" value="Not sure yet">Not sure yet</label>
+        </div></fieldset>
+      <div><label for="f-loc">Print locations</label><select id="f-loc" name="locations"><option value="">Choose one</option><option>Front only</option><option>Front + Back</option><option>Not sure</option></select></div>
+      <div><label for="f-qty">About how many pieces?</label><input id="f-qty" name="qty" type="number" min="1" inputmode="numeric"><div class="hint">12 piece minimum, 24+ for best pricing.</div></div>
+      <div><label for="f-date">When do you need them?</label><input id="f-date" name="need_by" type="date"></div>
+      <div><label for="f-logo">Upload your logo</label><input id="f-logo" name="logo" type="file" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.ai,.eps,.svg,.psd,.tif,.tiff"><div class="hint">Any format works. We'll clean it up for print.</div></div>
+      <div class="full"><label for="f-notes">Anything else we should know?</label><textarea id="f-notes" name="notes"></textarea></div>
+      <div class="hp" aria-hidden="true"><label for="f-web">Leave this empty</label><input id="f-web" name="company_website" type="text" tabindex="-1" autocomplete="off"></div>
+      <input type="hidden" name="src" id="f-src"><input type="hidden" name="t" id="f-t">
+      <div class="full"><div class="msg" id="formMsg" role="status" aria-live="polite"></div></div>
+      <div class="full"><button class="cta submit" type="submit" id="f-submit">Send my order request</button></div>
+    </form>
+    <p style="margin-top:16px;font-size:14px">Rather talk? Call or text <a href="tel:+19043500048">904-350-0048</a> or email <a href="mailto:crew@standardissueshirt.com">crew@standardissueshirt.com</a>.</p>
   </section>
 </main>
 
@@ -124,5 +168,34 @@ footer a{color:#fff}
   <div><b>Standard Issue Shirt Co.</b><br>Jacksonville, FL</div>
   <div><a href="tel:+19043500048">904-350-0048</a><br><a href="mailto:crew@standardissueshirt.com">crew@standardissueshirt.com</a></div>
 </div></footer>
+<script>
+(function () {
+  var BACKUP = 'https://airtable.com/appRVSSHWg3NVmkgq/pagGpG8DqMUcB5S2D/form';
+  var f = document.getElementById('orderForm'), msg = document.getElementById('formMsg'), btn = document.getElementById('f-submit');
+  var src = '';
+  try { src = new URLSearchParams(location.search).get('src') || ''; } catch (e) {}
+  document.getElementById('f-src').value = src.slice(0, 40);
+  document.getElementById('f-t').value = Math.floor(Date.now() / 1000);
+  function show(type, html) { msg.className = 'msg ' + type; msg.innerHTML = html; }
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!f.business.value.trim() || !f.name.value.trim() || !f.email.value.trim()) { show('err', 'Please fill in your business, name and email.'); return; }
+    if (!f.querySelector('input[name="needs[]"]:checked')) { show('err', 'Please pick at least one item under "What do you need?"'); return; }
+    btn.disabled = true; btn.textContent = 'Sending...'; msg.className = 'msg';
+    fetch(f.action, { method: 'POST', body: new FormData(f) })
+      .then(function (r) { return r.json().catch(function () { return { ok: false }; }); })
+      .then(function (d) {
+        if (d.ok) {
+          f.reset(); f.style.display = 'none';
+          show('ok', 'Got it. Thanks! We’ll email you a free mockup and final price within one business day.');
+        } else {
+          show('err', (d.error || 'Something went wrong.') + ' You can also <a href="' + BACKUP + '" target="_blank" rel="noopener">use our backup form</a> or call 904-350-0048.');
+        }
+      })
+      .catch(function () { show('err', 'Connection problem. Please <a href="' + BACKUP + '" target="_blank" rel="noopener">use our backup form</a> or call 904-350-0048.'); })
+      .finally(function () { btn.disabled = false; btn.textContent = 'Send my order request'; });
+  });
+})();
+</script>
 </body>
 </html>

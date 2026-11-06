@@ -1,0 +1,7 @@
+# Uploaded logos: never run code here, always download instead of rendering
+<FilesMatch "\.(php|phtml|phar|html?|js)$">
+  Require all denied
+</FilesMatch>
+Header set Content-Disposition attachment
+Header set X-Content-Type-Options nosniff
+Options -Indexes

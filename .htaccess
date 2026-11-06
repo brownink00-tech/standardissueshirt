@@ -1,0 +1,4 @@
+Options -Indexes
+<Files ~ "^(README\.md|\.git.*)$">
+  Require all denied
+</Files>
