@@ -174,7 +174,15 @@ footer a{color:#fff}
   var BACKUP = 'https://airtable.com/appRVSSHWg3NVmkgq/pagGpG8DqMUcB5S2D/form';
   var f = document.getElementById('orderForm'), msg = document.getElementById('formMsg'), btn = document.getElementById('f-submit');
   var src = '';
-  try { src = new URLSearchParams(location.search).get('src') || ''; } catch (e) {}
+  // Remember the QR/link code for 90 days, so a prospect who scans today and orders next week still credits the rep
+  try {
+    src = new URLSearchParams(location.search).get('src') || '';
+    if (src) localStorage.setItem('si_src', JSON.stringify({ v: src, t: Date.now() }));
+    else {
+      var saved = JSON.parse(localStorage.getItem('si_src') || 'null');
+      if (saved && Date.now() - saved.t < 90 * 864e5) src = saved.v;
+    }
+  } catch (e) {}
   document.getElementById('f-src').value = src.slice(0, 40);
   document.getElementById('f-t').value = Math.floor(Date.now() / 1000);
   function show(type, html) { msg.className = 'msg ' + type; msg.innerHTML = html; }

@@ -143,7 +143,16 @@ if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $needBy)) $fields['Need by'] = $needBy;
 // One QR tag per piece type, e.g. standardissueshirt.com/?src=sample
 $srcMap = ['sample' => 'Sample drop', 'letter' => 'Letter drop', 'flyer' => 'Flyer drop', 'postcard' => 'Postcard drop',
            'gbp' => 'Google profile', 'social' => 'Social', 'ads' => 'Google Ads', 'email' => 'Email campaign', 'referral' => 'Referral'];
-$fields['Source'] = $srcMap[strtolower($src)] ?? 'Other';
+// Rep codes: "<rep>-<piece>", e.g. ?src=dd-sample (Daryll Davis dropped the sample),
+// ?src=dd-followup (link Daryll texts/emails on follow-up). Add new reps here.
+$reps = ['dd' => 'Daryll Davis'];
+$srcKey = strtolower($src);
+if (preg_match('/^([a-z]+)-([a-z]+)$/', $srcKey, $m) && isset($reps[$m[1]])) {
+    $fields['Rep'] = $reps[$m[1]];
+    $srcKey = $m[2];
+}
+$srcMap['followup'] = 'Rep follow-up';
+$fields['Source'] = $srcMap[$srcKey] ?? 'Other';
 $noteParts = [];
 if ($notes !== '') $noteParts[] = $notes;
 $noteParts[] = 'Submitted on standardissueshirt.com' . ($src !== '' ? " (src: $src)" : '');
