@@ -65,10 +65,18 @@
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
-[id]{scroll-margin-top:16px}
+[id]{scroll-margin-top:118px}
 .wrap{max-width:1040px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
-header{background:var(--olive);color:#fff}
-header .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-block:14px;flex-wrap:wrap}
+header{background:var(--olive);color:#fff;position:sticky;top:0;z-index:30;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+header .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-block:10px;flex-wrap:wrap}
+.secnav{border-top:1px solid rgba(255,255,255,.18)}
+.secnav .wrap{display:flex;gap:4px;padding-block:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;justify-content:flex-start}
+.secnav .wrap::-webkit-scrollbar{display:none}
+.secnav a{color:#fff;text-decoration:none;font-family:var(--mono);font-weight:600;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;padding:10px 12px;white-space:nowrap;border-bottom:3px solid transparent}
+.secnav a:hover{background:rgba(255,255,255,.08)}
+.secnav a.on{border-bottom-color:var(--hi);color:var(--hi)}
+.totop{position:fixed;right:18px;bottom:18px;z-index:25;width:46px;height:46px;border:2px solid var(--ink);background:#fff;color:var(--ink);font-size:20px;font-weight:800;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s}
+.totop.show{opacity:1;pointer-events:auto}
 .brand{display:flex;align-items:center;gap:12px;color:#fff;text-decoration:none}
 .mark{border:2px solid #fff;padding:6px 10px;font-family:var(--mono);font-weight:600;font-size:12px;letter-spacing:.12em;line-height:1.25;text-align:center}
 .tag{font-size:19px;letter-spacing:.04em;text-transform:uppercase;font-weight:800;line-height:1.1}
@@ -180,6 +188,9 @@ footer a{color:#fff}
 @media (max-width:640px){
   h1{white-space:normal;font-size:clamp(56px,17vw,90px)}
   .hdr-r .tel{display:none}
+  .brand .mark{display:none}.tag{font-size:16px}
+  .totop{bottom:76px;right:12px}
+  [id]{scroll-margin-top:104px}
   .shirts{grid-template-columns:1fr 1fr}.shirts .shirt:last-child{grid-column:1/-1}
   .packs{grid-template-columns:1fr}
   .order,.quick{grid-template-columns:1fr}
@@ -194,15 +205,25 @@ footer a{color:#fff}
 </head>
 <body>
 <header><div class="wrap">
-  <a class="brand" href="/"><div class="mark">STANDARD<br>ISSUE</div><div class="tag">Standard Issue<br>Shirt Co.</div></a>
+  <a class="brand" href="#top"><div class="mark">STANDARD<br>ISSUE</div><div class="tag">Standard Issue<br>Shirt Co.</div></a>
   <div class="hdr-r">
     <a class="tel js-text" href="sms:+19043825885" data-track="text_click_header">Text 904-382-5885</a>
     <a class="cta" href="#mockup" data-track="cta_header_mockup">Free mockup</a>
   </div>
-</div></header>
+</div>
+<nav class="secnav" aria-label="Page sections"><div class="wrap">
+  <a href="#top">Home</a>
+  <a href="#mockup">Free mockup</a>
+  <a href="#pricing">Pricing</a>
+  <a href="#packs">Crew Packs</a>
+  <a href="#order">Order</a>
+  <a href="#refer">Refer a crew</a>
+  <a href="#faq">FAQ</a>
+</div></nav>
+</header>
 
 <main>
-  <section class="wrap hero">
+  <section class="wrap hero" id="top">
     <div>
       <p class="kicker">Custom shirts for Jacksonville businesses</p>
       <h1>Crew Pack</h1>
@@ -271,7 +292,7 @@ footer a{color:#fff}
       </div>
     </section>
 
-    <section class="prices" aria-labelledby="ph">
+    <section class="prices" id="pricing" aria-labelledby="ph">
       <h2 id="ph">Pricing</h2>
       <table>
         <thead><tr><th>Per piece · 24+ pieces</th><th class="n">Front</th><th class="n">Front + Back</th></tr></thead>
@@ -285,7 +306,7 @@ footer a{color:#fff}
       <p class="fine">Full color included, no setup fees · Front up to 4" × 4" · Back up to 11" × 11" · 12 to 23 pieces add $2 each · Sizes S–XL · 2XL +$6 · 3XL and up +$9. A full front design is priced at the Front + Back rate.</p>
     </section>
 
-    <section class="packs" aria-label="Crew Pack bundles">
+    <section class="packs" id="packs" aria-label="Crew Pack bundles">
       <div class="pack"><div><h3>Starter Crew Pack</h3><p>24 Everyday Tees + 12 Everyday Crewnecks, front + back</p></div><div class="amt">$595</div></div>
       <div class="pack dark"><div><h3>Premium Crew Pack</h3><p>24 Premium Tees + 12 Premium Crewnecks, front + back</p></div><div class="amt">$850</div></div>
     </section>
@@ -355,7 +376,7 @@ footer a{color:#fff}
     </div>
   </section>
 
-  <section class="wrap faq" aria-labelledby="fh">
+  <section class="wrap faq" id="faq" aria-labelledby="fh">
     <h2 id="fh">Questions</h2>
     <details><summary>What's the minimum order?</summary><p>12 pieces per design. 24 or more gets the best price; 12 to 23 pieces add $2 each.</p></details>
     <details><summary>How fast can I get them?</summary><p>7 to 10 business days after you approve your mockup. We print here in Jacksonville and hand deliver for free.</p></details>
@@ -372,6 +393,7 @@ footer a{color:#fff}
   <div><a href="tel:+19043825885">904-382-5885</a><br><a href="mailto:crew@standardissueshirt.com">crew@standardissueshirt.com</a></div>
 </div></footer>
 
+<button class="totop" id="totop" type="button" aria-label="Back to top">&uarr;</button>
 <nav class="mbar" aria-label="Quick actions">
   <a class="t js-text" href="sms:+19043825885" data-track="text_click_mobilebar">Text your logo</a>
   <a class="m" href="#mockup" data-track="cta_mobilebar_mockup">Free mockup</a>
@@ -442,6 +464,20 @@ window.SI = {
   var body = "Hi! I'd like a free shirt mockup for my business. Here's my logo:" + (src ? ' (code ' + src + ')' : '');
   var sms = 'sms:+19043825885' + (/iPhone|iPad|iPod|Mac/.test(navigator.userAgent) ? '&' : '?') + 'body=' + encodeURIComponent(body);
   document.querySelectorAll('.js-text').forEach(function (a) { a.href = sms; });
+
+  /* --- section nav: highlight where you are, back-to-top button --- */
+  var links = Array.prototype.slice.call(document.querySelectorAll('.secnav a'));
+  var secs = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+  var top = document.getElementById('totop');
+  function onScroll() {
+    var y = window.scrollY + 140, cur = 0;
+    secs.forEach(function (el, i) { if (el && el.getBoundingClientRect().top + window.scrollY <= y) cur = i; });
+    links.forEach(function (a, i) { a.classList.toggle('on', i === cur); });
+    var on = links[cur]; if (on && on.scrollIntoView && on.parentNode.scrollWidth > on.parentNode.clientWidth) on.parentNode.scrollLeft = on.offsetLeft - 20;
+    top.classList.toggle('show', window.scrollY > 700);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  top.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
   /* --- click tracking on buttons --- */
   document.querySelectorAll('[data-track]').forEach(function (el) { el.addEventListener('click', function () { track(el.getAttribute('data-track'), { src: src }); }); });
