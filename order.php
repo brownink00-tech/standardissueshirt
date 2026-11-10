@@ -110,6 +110,8 @@ function clean($k, $max = 200) {
     return mb_substr($v, 0, $max);
 }
 
+$mode     = clean('mode', 20);
+if (!in_array($mode, ['order', 'mockup', 'referral'], true)) $mode = 'order';
 $business = clean('business');
 $name     = clean('name');
 $email    = clean('email', 254);
@@ -119,22 +121,49 @@ $locs     = clean('locations', 40);
 $qty      = clean('qty', 10);
 $needBy   = clean('need_by', 10);
 $src      = clean('src', 40);
-
-if ($business === '' || $name === '' || $email === '') fail('Please fill in business, name and email.');
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) fail('Please enter a valid email address.');
+$offerTag = ['order' => 'Order form', 'mockup' => 'Free mockup form', 'referral' => 'Referral form'][$mode];
 
 $allowedNeeds = ['Starter Crew Pack ($595)', 'Premium Crew Pack ($850)', 'Everyday Tees', 'Premium Tees',
                  'Everyday Crewnecks', 'Premium Crewnecks', 'Branded webstore', 'Not sure yet'];
-$needs = array_values(array_intersect((array)($_POST['needs'] ?? []), $allowedNeeds));
-if (!$needs) fail('Please pick at least one item under "What do you need?"');
+$referrer = null;
+
+if ($mode === 'mockup') {
+    // Free mockup: name, business, and an email OR a mobile number
+    if ($business === '' || $name === '') fail('Please add your name and business.');
+    if ($email === '' && $phone === '') fail('Please add an email or a mobile number so we can send your mockup.');
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) fail('Please enter a valid email address.');
+    $needs = ['Free mockup'];
+} elseif ($mode === 'referral') {
+    // Referral: the referred business becomes the lead; the person who sent it is noted and thanked
+    $refBiz     = clean('ref_business');
+    $refContact = clean('ref_contact');
+    $refReach   = clean('ref_reach', 254);
+    if ($name === '' || $email === '' || $refBiz === '') fail('Please add your name, your email and their business.');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) fail('Please enter a valid email address.');
+    $referrer = ['name' => $name, 'email' => $email];
+    $business = $refBiz;
+    $name     = $refContact !== '' ? $refContact : '(ask ' . $referrer['name'] . ')';
+    $email = ''; $phone = '';
+    if ($refReach !== '') {
+        if (filter_var($refReach, FILTER_VALIDATE_EMAIL)) $email = $refReach; else $phone = mb_substr($refReach, 0, 40);
+    }
+    $needs = ['Not sure yet'];
+    $src = $src !== '' ? $src : 'referral';
+    $notes = 'Referred by ' . $referrer['name'] . ' (' . $referrer['email'] . '). Reward owed on first order.';
+} else {
+    if ($business === '' || $name === '' || $email === '') fail('Please fill in business, name and email.');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) fail('Please enter a valid email address.');
+    $needs = array_values(array_intersect((array)($_POST['needs'] ?? []), $allowedNeeds));
+    if (!$needs) fail('Please pick at least one item under "What do you need?"');
+}
 
 $fields = [
     'Business Name'     => $business,
     'Contact Name'      => $name,
-    'Email'             => $email,
     'What do you need?' => $needs,
     'Status'            => 'New',
 ];
+if ($email !== '') $fields['Email'] = $email;
 if ($phone !== '') $fields['Phone'] = $phone;
 if (in_array($locs, ['Front only', 'Front + Back', 'Not sure'], true)) $fields['Print locations'] = $locs;
 if ($qty !== '' && ctype_digit($qty)) $fields['Estimated quantity'] = (int)$qty;
@@ -152,17 +181,17 @@ if (preg_match('/^([a-z]+)-([a-z]+)$/', $srcKey, $m) && isset($reps[$m[1]])) {
     $srcKey = $m[2];
 }
 $srcMap['followup'] = 'Rep follow-up';
-$fields['Source'] = $srcMap[$srcKey] ?? 'Other';
+$fields['Source'] = $mode === 'referral' ? 'Referral' : ($srcMap[$srcKey] ?? 'Other');
 $noteParts = [];
 if ($notes !== '') $noteParts[] = $notes;
-$noteParts[] = 'Submitted on standardissueshirt.com' . ($src !== '' ? " (src: $src)" : '');
+$noteParts[] = 'Submitted on standardissueshirt.com via ' . $offerTag . ($src !== '' ? " (src: $src)" : '');
 $fields['Notes'] = implode("\n\n", $noteParts);
 
 // Optional logo upload: saved to /uploads with a random name, then handed to Airtable by URL
 if (!empty($_FILES['logo']['name']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
     if ($_FILES['logo']['size'] > 15 * 1024 * 1024) fail('Logo file is too big. Please keep it under 15 MB, or email it to crew@standardissueshirt.com.');
     $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
-    $okExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'pdf', 'ai', 'eps', 'svg', 'psd', 'tif', 'tiff'];
+    $okExt = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'pdf', 'ai', 'eps', 'svg', 'psd', 'tif', 'tiff'];
     if (!in_array($ext, $okExt, true)) fail('That file type is not supported. Try PNG, JPG, PDF, AI, EPS or SVG.');
     $dir = __DIR__ . '/uploads';
     if (!is_dir($dir)) mkdir($dir, 0755, true);
@@ -189,10 +218,12 @@ $saveRecord = function ($fields) use ($token) {
     return [$code, $resp];
 };
 [$code, $resp] = $saveRecord($fields);
-// If Airtable won't add a new Source option, save the order anyway as "Other" (the exact tag stays in Notes)
-if ($code === 422 && $fields['Source'] !== 'Other') {
-    error_log('Airtable 422, retrying with Source=Other: ' . $resp);
+// If Airtable won't add a new select option (Source, or "Free mockup"), save the lead anyway.
+// The exact tag stays in Notes, so nothing is lost.
+if ($code === 422) {
+    error_log('Airtable 422, retrying with safe options: ' . $resp);
     $fields['Source'] = 'Other';
+    if (in_array('Free mockup', $fields['What do you need?'], true)) $fields['What do you need?'] = ['Not sure yet'];
     [$code, $resp] = $saveRecord($fields);
 }
 
@@ -202,33 +233,57 @@ if ($code < 200 || $code >= 300) {
 }
 $recordId = json_decode($resp, true)['records'][0]['id'] ?? null;
 
-// Confirmation email to the customer, from crew@ so replies come back to us
+// Confirmation email, from crew@ so replies come back to us
 $oneLine = fn($s) => trim(preg_replace('/[\r\n]+/', ' ', $s));
-$first = $oneLine(explode(' ', $name)[0]);
 $hasLogo = isset($fields['Logo file']);
-$body = "Hi $first,\n\n"
-    . "Thanks for reaching out to Standard Issue Shirt Co. We got your request for " . $oneLine($business) . " (" . implode(', ', $needs) . ") and we're on it.\n\n"
-    . "Here's what happens next:\n"
-    . "1. We clean up your logo and send you a free mockup within one business day.\n"
-    . "2. Your final price comes with the mockup. No setup fees, no surprises.\n"
-    . "3. Once you approve, we print here in Jacksonville and hand deliver in 7 to 10 days.\n\n"
-    . ($hasLogo ? "" : "Didn't get a chance to attach your logo? Just reply to this email with it. Any file works.\n\n")
-    . "Questions? Reply here or call or text 904-382-5885.\n\n"
-    . "Michael Brown\nStandard Issue Shirt Co.\nstandardissueshirt.com\n";
+$sig = "Michael Brown\nStandard Issue Shirt Co.\nstandardissueshirt.com\n";
+if ($mode === 'referral') {
+    $to = $referrer['email'];
+    $first = $oneLine(explode(' ', $referrer['name'])[0]);
+    $subject = 'Thanks for the referral, ' . $first;
+    $body = "Hi $first,\n\n"
+        . "Thank you for sending " . $oneLine($business) . " our way. We'll reach out and let them know you sent us.\n\n"
+        . "When they place their first order, we'll get your reward to you. We'll keep you posted.\n\n"
+        . "Know another crew that needs shirts? Just reply to this email.\n\n" . $sig;
+} else {
+    $to = $email;
+    $first = $oneLine(explode(' ', $name)[0]);
+    if ($mode === 'mockup') {
+        $subject = 'Got it, ' . $first . '. Your free mockup is on the way';
+        $body = "Hi $first,\n\n"
+            . "Thanks for reaching out to Standard Issue Shirt Co. We'll put your logo on a shirt and send you a free mockup for " . $oneLine($business) . " within one business day.\n\n"
+            . ($hasLogo ? "" : "Didn't attach your logo? Just reply to this email with it. Any file works, even a photo.\n\n")
+            . "No cost and no commitment. If you like it, we print here in Jacksonville and hand deliver in 7 to 10 days.\n\n"
+            . "Questions? Reply here or call or text 904-382-5885.\n\n" . $sig;
+    } else {
+        $subject = 'Got your request, ' . $first . '. Mockup coming within 1 business day';
+        $body = "Hi $first,\n\n"
+            . "Thanks for reaching out to Standard Issue Shirt Co. We got your request for " . $oneLine($business) . " (" . implode(', ', $needs) . ") and we're on it.\n\n"
+            . "Here's what happens next:\n"
+            . "1. We clean up your logo and send you a free mockup within one business day.\n"
+            . "2. Your final price comes with the mockup. No setup fees, no surprises.\n"
+            . "3. Once you approve, we print here in Jacksonville and hand deliver in 7 to 10 days.\n\n"
+            . ($hasLogo ? "" : "Didn't get a chance to attach your logo? Just reply to this email with it. Any file works.\n\n")
+            . "Questions? Reply here or call or text 904-382-5885.\n\n" . $sig;
+    }
+}
 $headers = implode("\r\n", [
     'From: Standard Issue Shirt Co. <crew@standardissueshirt.com>',
     'Reply-To: crew@standardissueshirt.com',
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=UTF-8',
 ]);
-$subject = 'Got your request, ' . $first . '. Mockup coming within 1 business day';
+$sent = false;
+if ($to === '') {
+    // Phone-only mockup request: no email to send; the team follows up by text
+} else
 if (!empty($cfg['smtp_pass'])) {
     // Authenticated send through the crew@ mailbox (DKIM-signed, lands in inbox)
-    $sent = smtp_send($cfg['smtp_user'] ?? 'crew@standardissueshirt.com', $cfg['smtp_pass'], $email, $subject, $body);
+    $sent = smtp_send($cfg['smtp_user'] ?? 'crew@standardissueshirt.com', $cfg['smtp_pass'], $to, $subject, $body);
 } else {
-    $sent = @mail($email, $subject, $body, $headers, '-fcrew@standardissueshirt.com');
+    $sent = @mail($to, $subject, $body, $headers, '-fcrew@standardissueshirt.com');
 }
-if (!$sent) error_log('Confirmation email failed for ' . $email);
+if (!$sent && $to !== '') error_log('Confirmation email failed for ' . $to);
 
 if ($sent && $recordId) {
     $ch = curl_init('https://api.airtable.com/v0/' . BASE_ID . '/' . TABLE_ID . '/' . $recordId);
