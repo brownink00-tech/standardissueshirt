@@ -198,7 +198,7 @@ if ($code === 422 && $fields['Source'] !== 'Other') {
 
 if ($code < 200 || $code >= 300) {
     error_log('Airtable error ' . $code . ': ' . $resp);
-    fail('Something went wrong on our end. Please call or text 904-350-0048.', 502);
+    fail('Something went wrong on our end. Please call or text 904-382-5885.', 502);
 }
 $recordId = json_decode($resp, true)['records'][0]['id'] ?? null;
 
@@ -213,7 +213,7 @@ $body = "Hi $first,\n\n"
     . "2. Your final price comes with the mockup. No setup fees, no surprises.\n"
     . "3. Once you approve, we print here in Jacksonville and hand deliver in 7 to 10 days.\n\n"
     . ($hasLogo ? "" : "Didn't get a chance to attach your logo? Just reply to this email with it. Any file works.\n\n")
-    . "Questions? Reply here or call or text 904-350-0048.\n\n"
+    . "Questions? Reply here or call or text 904-382-5885.\n\n"
     . "Michael Brown\nStandard Issue Shirt Co.\nstandardissueshirt.com\n";
 $headers = implode("\r\n", [
     'From: Standard Issue Shirt Co. <crew@standardissueshirt.com>',
