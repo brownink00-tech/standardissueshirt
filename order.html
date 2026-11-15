@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build Your Order | Standard Issue Shirt Co.</title>
+<meta name="description" content="Build your custom shirt order, see your total with tax, and pay online. Printed in Jacksonville, FL. Nothing prints until you approve your mockup.">
+<link rel="canonical" href="https://standardissueshirt.com/order.html">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Saira+Stencil+One&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1c1f17;--paper:#fff;--stone:#eef0e8;--rule:#a9ad9c;--muted:#565c48;--olive:#3F4A2A;--hi:#F26B1D;--display:"Saira Stencil One",Impact,sans-serif;--body:"Archivo",Arial,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:max(20px,env(safe-area-inset-left))}
+header{background:var(--olive);color:#fff;position:sticky;top:0;z-index:30;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+header .wrap{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-block:10px}
+.brand{display:flex;align-items:center;gap:12px;color:#fff;text-decoration:none}
+.mark{border:2px solid #fff;padding:6px 10px;font-family:var(--mono);font-weight:600;font-size:12px;letter-spacing:.12em;line-height:1.25;text-align:center}
+.tag{font-size:19px;letter-spacing:.04em;text-transform:uppercase;font-weight:800;line-height:1.1}
+header a.back{color:#fff;font-family:var(--mono);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(52px,8vw,92px);line-height:.9;margin:28px 0 8px;text-transform:uppercase}
+.lede{font-size:19px;max-width:640px;margin:0 0 6px;font-weight:500}
+.promise{display:inline-block;background:var(--hi);font-family:var(--mono);font-weight:600;font-size:13px;padding:7px 12px;text-transform:uppercase;letter-spacing:.05em;margin:10px 0 24px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:32px;align-items:start;padding-bottom:60px}
+.step{border-top:3px solid var(--ink);padding:16px 0 26px}
+.step h2{font-family:var(--display);font-weight:400;font-size:32px;text-transform:uppercase;margin:0 0 12px;line-height:1;display:flex;gap:12px;align-items:baseline}
+.step h2 .n{font-family:var(--mono);font-size:14px;color:var(--hi);font-weight:600}
+.choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.choice{border:3px solid var(--ink);padding:14px;cursor:pointer;background:#fff;text-align:left;font:inherit;color:inherit;display:flex;flex-direction:column;gap:4px}
+.choice b{font-family:var(--display);font-weight:400;font-size:22px;text-transform:uppercase;line-height:1}
+.choice .amt{font-weight:800;font-size:28px;line-height:1}
+.choice small{font-size:13px;color:var(--muted)}
+.choice[aria-pressed=true]{background:var(--olive);border-color:var(--olive);color:#fff}
+.choice[aria-pressed=true] small{color:#dfe3d3}.choice[aria-pressed=true] .amt{color:var(--hi)}
+.item{border:2px solid var(--ink);padding:14px;margin-bottom:12px;background:#fff}
+.item .top{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:10px;align-items:end}
+.item h3{margin:0 0 8px;font-size:16px;text-transform:uppercase;letter-spacing:.04em}
+label,.lbl{display:block;font-family:var(--mono);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+input[type=text],input[type=email],input[type=tel],input[type=date],input[type=number],select,textarea{width:100%;font:inherit;font-size:16px;padding:10px 11px;border:2px solid var(--ink);border-radius:0;background:#fff;color:var(--ink)}
+textarea{min-height:80px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid var(--hi);outline-offset:1px}
+.sizes{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin-top:12px}
+.sizes div{text-align:center}
+.sizes label{text-align:center;margin-bottom:3px}
+.sizes input{text-align:center;padding:9px 4px}
+.sizes .up{font-family:var(--mono);font-size:10.5px;color:var(--muted);display:block;margin-top:2px}
+.count{font-family:var(--mono);font-size:13px;font-weight:600;margin-top:8px}
+.count.bad{color:#b3261e}.count.good{color:var(--olive)}
+.rm{border:2px solid var(--ink);background:#fff;font:inherit;font-size:14px;font-weight:700;padding:10px 12px;cursor:pointer}
+.add{border:2px dashed var(--ink);background:#fff;font:inherit;font-weight:700;padding:12px;width:100%;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.two .full{grid-column:1/-1}
+.hint{font-size:13px;color:var(--muted);margin-top:4px}
+.radios{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.radios label{font-family:var(--body);font-size:15px;font-weight:600;text-transform:none;letter-spacing:0;margin:0;border:2px solid var(--ink);padding:9px 12px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.radios input{accent-color:var(--olive);margin:0}
+.radios label:has(input:checked){background:var(--olive);border-color:var(--olive);color:#fff}
+.check{display:flex;gap:10px;align-items:flex-start;font-family:var(--body);text-transform:none;letter-spacing:0;font-size:15px;font-weight:600}
+.check input{width:18px;height:18px;margin-top:2px;accent-color:var(--olive)}
+.hidden{display:none!important}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+/* summary */
+.sum{position:sticky;top:84px;border:3px solid var(--ink);background:var(--stone)}
+.sum h2{background:var(--ink);color:#fff;font-family:var(--display);font-weight:400;font-size:26px;text-transform:uppercase;margin:0;padding:10px 16px}
+.sum .body{padding:14px 16px}
+.lines{list-style:none;margin:0;padding:0;font-size:14px}
+.lines li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--rule)}
+.lines li.info{color:var(--muted);font-size:13px}
+.lines li span:last-child{white-space:nowrap;font-weight:700}
+.tot{display:flex;justify-content:space-between;padding:6px 0;font-size:15px}
+.tot.big{font-size:26px;font-weight:800;border-top:3px solid var(--ink);margin-top:6px;padding-top:10px}
+.empty{color:var(--muted);font-size:14px}
+.note{font-size:13px;margin:10px 0 0}
+.msg{padding:12px 14px;font-weight:600;margin-top:12px;display:none}
+.msg.err{display:block;border:2px solid #b3261e;color:#b3261e;background:#fff5f4}
+.msg.ok{display:block;background:var(--olive);color:#fff}
+#pp{margin-top:14px;min-height:50px}
+.cta{display:block;width:100%;background:var(--hi);color:var(--ink);font:inherit;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:15px;border:0;cursor:pointer;margin-top:14px}
+.cta[disabled]{opacity:.55;cursor:not-allowed}
+.trust{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:10px;line-height:1.7}
+.done{border:3px solid var(--olive);padding:28px;margin:30px 0 60px;background:var(--stone)}
+.done h2{font-family:var(--display);font-weight:400;font-size:44px;text-transform:uppercase;margin:0 0 8px;line-height:1}
+footer{background:var(--olive);color:#fff;font-size:14px}
+footer .wrap{padding-block:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+footer a{color:#fff}
+@media (max-width:900px){.grid{grid-template-columns:1fr}.sum{position:static}}
+@media (max-width:640px){.choices{grid-template-columns:1fr}.item .top{grid-template-columns:1fr 1fr}.item .top>div:first-child{grid-column:1/-1}.two{grid-template-columns:1fr}.mark{display:none}.tag{font-size:16px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a class="brand" href="/"><div class="mark">STANDARD<br>ISSUE</div><div class="tag">Standard Issue<br>Shirt Co.</div></a>
+  <a class="back" href="/">← Back to site</a>
+</div></header>
+
+<main class="wrap" id="main">
+  <h1>Build your order</h1>
+  <p class="lede">Pick your shirts, see your exact total with tax, and pay online. We send your mockup within one business day.</p>
+  <div class="promise">Nothing prints until you approve your mockup</div>
+
+  <form id="f" class="grid" novalidate>
+    <div>
+      <section class="step"><h2><span class="n">01</span>What are you ordering?</h2>
+        <div class="choices">
+          <button type="button" class="choice" data-pick="starter" aria-pressed="false"><b>Starter Crew Pack</b><span class="amt">$595</span><small>24 Everyday Tees + 12 Everyday Crewnecks, front + back</small></button>
+          <button type="button" class="choice" data-pick="premium" aria-pressed="false"><b>Premium Crew Pack</b><span class="amt">$850</span><small>24 Premium Tees + 12 Premium Crewnecks, front + back</small></button>
+          <button type="button" class="choice" data-pick="custom" aria-pressed="false"><b>Build your own</b><span class="amt">12+</span><small>Any mix of tees and crewnecks. 12 piece minimum, best price at 24+.</small></button>
+        </div>
+      </section>
+
+      <section class="step hidden" id="s-items"><h2><span class="n">02</span>Colors and sizes</h2>
+        <div id="items"></div>
+        <button type="button" class="add hidden" id="add">+ Add another shirt or color</button>
+        <p class="hint">White is the default. 2XL adds $6 and 3XL and up adds $9 per piece.</p>
+      </section>
+
+      <section class="step hidden" id="s-art"><h2><span class="n">03</span>Your logo</h2>
+        <div class="two">
+          <div class="full"><label for="logo">Upload your logo</label><input id="logo" name="logo" type="file" accept=".png,.jpg,.jpeg,.gif,.webp,.heic,.pdf,.ai,.eps,.svg,.psd,.tif,.tiff"><div class="hint">Any file works, even a photo. We clean it up for print. No file handy? Email it after you order.</div></div>
+          <div><label for="need_by">Need them by</label><input id="need_by" name="need_by" type="date"><div class="hint">Ready 7 to 10 business days after you approve your mockup.</div></div>
+          <div><label for="notes">Notes for us</label><textarea id="notes" name="notes" placeholder="Logo colors, names on the back, anything else"></textarea></div>
+        </div>
+      </section>
+
+      <section class="step hidden" id="s-ship"><h2><span class="n">04</span>Delivery</h2>
+        <div class="radios">
+          <label><input type="radio" name="delivery" value="deliver" checked>Deliver to me (free in NE Florida)</label>
+          <label><input type="radio" name="delivery" value="pickup">Pick up in Jacksonville</label>
+        </div>
+        <div class="two" id="addr">
+          <div class="full"><label for="address">Street address</label><input id="address" name="address" type="text" autocomplete="street-address"></div>
+          <div><label for="city">City</label><input id="city" name="city" type="text" autocomplete="address-level2"></div>
+          <div><label for="zip">ZIP code</label><input id="zip" name="zip" type="text" inputmode="numeric" maxlength="5" autocomplete="postal-code"><div class="hint">Sales tax is set by the county we deliver to.</div></div>
+        </div>
+        <p style="margin:14px 0 6px"><label class="check"><input type="checkbox" id="exempt">We're tax-exempt (church, school, nonprofit)</label></p>
+        <div id="certbox" class="hidden"><label for="cert">Florida Consumer Exemption Certificate</label><input id="cert" name="cert" type="file" accept=".pdf,.png,.jpg,.jpeg,.heic,.webp"><div class="hint">We check it within one business day, then send your mockup and a PayPal invoice with no sales tax.</div></div>
+      </section>
+
+      <section class="step hidden" id="s-you"><h2><span class="n">05</span>Your info</h2>
+        <div class="two">
+          <div><label for="business">Business name *</label><input id="business" name="business" type="text" autocomplete="organization"></div>
+          <div><label for="name">Your name *</label><input id="name" name="name" type="text" autocomplete="name"></div>
+          <div><label for="email">Email *</label><input id="email" name="email" type="email" autocomplete="email"></div>
+          <div><label for="phone">Mobile</label><input id="phone" name="phone" type="tel" autocomplete="tel"></div>
+        </div>
+        <div class="hp" aria-hidden="true"><input name="company_website" type="text" tabindex="-1" autocomplete="off"></div>
+      </section>
+    </div>
+
+    <aside class="sum" aria-live="polite">
+      <h2>Your total</h2>
+      <div class="body">
+        <ul class="lines" id="lines"><li class="empty">Pick a Crew Pack or build your own.</li></ul>
+        <div class="tot"><span>Subtotal</span><span id="sub">$0.00</span></div>
+        <div class="tot"><span id="taxlbl">Sales tax</span><span id="tax">–</span></div>
+        <div class="tot big"><span>Total</span><span id="total">$0.00</span></div>
+        <div class="msg" id="msg" role="alert"></div>
+        <div id="pp"></div>
+        <button type="button" class="cta hidden" id="exemptBtn">Send order for review</button>
+        <p class="note">Pay by card or PayPal. Your statement shows PAYPAL *STDISSUESHIRT.</p>
+        <div class="trust">✓ Mockup in 1 business day<br>✓ Full refund if we can't get it right<br>✓ Printed in Jacksonville, FL</div>
+      </div>
+    </aside>
+  </form>
+
+  <div class="done hidden" id="done">
+    <h2>You're all set</h2>
+    <p id="doneText"></p>
+    <p>Check your email for your receipt. Questions? Call or text <a href="sms:+19043825885">904-382-5885</a>.</p>
+    <p><a href="/">Back to standardissueshirt.com</a></p>
+  </div>
+</main>
+
+<footer><div class="wrap"><div>Standard Issue Shirt Co. · Printed in Jacksonville, FL</div><div><a href="tel:+19043825885">904-382-5885</a> · <a href="mailto:crew@standardissueshirt.com">crew@standardissueshirt.com</a></div></div></footer>
+
+<script>
+(function () {
+  var CAT = null, mode = null, items = [], quote = null, qTimer = null, qSeq = 0;
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var f = $('#f'), msg = $('#msg');
+  function money(n) { return '$' + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function track(ev, p) { try { if (window.gtag) gtag('event', ev, p || {}); if (window.fbq && ev === 'purchase') fbq('track', 'Purchase', { value: p.value, currency: 'USD' }); } catch (e) {} }
+  function showMsg(t, cls) { msg.className = 'msg ' + (cls || 'err'); msg.innerHTML = t; }
+  function clearMsg() { msg.className = 'msg'; msg.textContent = ''; }
+
+  var src = '';
+  try { var s = JSON.parse(localStorage.getItem('si_src') || 'null'); if (s && Date.now() - s.t < 90 * 864e5) src = s.v; } catch (e) {}
+  src = (new URLSearchParams(location.search).get('src') || src || '').slice(0, 40);
+
+  /* ---------- order items ---------- */
+  function newItem(style, fixed, need) { return { style: style, color: 'White', print: fixed ? 'fb' : 'front', sizes: {}, fixed: !!fixed, need: need || 0 }; }
+
+  function pick(p) {
+    mode = p;
+    $$('.choice').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-pick') === p)); });
+    if (p === 'custom') items = [newItem('PC54')];
+    else { var pk = CAT.packs[p]; items = [newItem(pk.tee, true, pk.tees), newItem(pk.crew, true, pk.crews)]; }
+    ['#s-items', '#s-art', '#s-ship', '#s-you'].forEach(function (id) { $(id).classList.remove('hidden'); });
+    $('#add').classList.toggle('hidden', p !== 'custom');
+    render(); requote(0);
+    track('begin_checkout', { item: p });
+  }
+
+  function render() {
+    var box = $('#items'); box.innerHTML = '';
+    items.forEach(function (it, i) {
+      var st = CAT.styles[it.style], d = document.createElement('div'); d.className = 'item';
+      var styleSel = it.fixed ? '<h3>' + (it.need) + ' ' + esc(st.name) + 's <span style="font-weight:500;text-transform:none;color:var(--muted)">' + esc(st.brand) + '</span></h3>' : '';
+      var top = '<div class="top">';
+      if (!it.fixed) {
+        top += '<div><label>Shirt</label><select data-k="style">' + Object.keys(CAT.styles).map(function (k) { var s = CAT.styles[k]; return '<option value="' + k + '"' + (k === it.style ? ' selected' : '') + '>' + esc(s.name) + ' ($' + s.price.front + '+)</option>'; }).join('') + '</select></div>';
+      }
+      top += '<div><label>Color</label><select data-k="color">' + st.colors.map(function (c) { return '<option' + (c === it.color ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select></div>';
+      if (!it.fixed) {
+        top += '<div><label>Print</label><select data-k="print"><option value="front"' + (it.print === 'front' ? ' selected' : '') + '>Front ($' + st.price.front + ')</option><option value="fb"' + (it.print === 'fb' ? ' selected' : '') + '>Front + Back ($' + st.price.fb + ')</option></select></div>';
+        top += items.length > 1 ? '<button type="button" class="rm" data-rm="1" aria-label="Remove">Remove</button>' : '<span></span>';
+      }
+      top += '</div>';
+      var sz = '<div class="sizes">' + st.sizes.map(function (z) {
+        var up = CAT.rules.size_add[z]; var v = it.sizes[z] || '';
+        return '<div><label for="q' + i + z + '">' + z + '</label><input id="q' + i + z + '" type="number" min="0" max="5000" inputmode="numeric" data-size="' + z + '" value="' + v + '" placeholder="0">' + (up ? '<span class="up">+$' + up + '</span>' : '<span class="up">&nbsp;</span>') + '</div>';
+      }).join('') + '</div>';
+      d.innerHTML = styleSel + top + '<div class="hint">' + esc(st.note) + '</div>' + sz + '<div class="count" data-count></div>';
+      d.addEventListener('change', function (e) {
+        var k = e.target.getAttribute('data-k');
+        if (k === 'style') { it.style = e.target.value; it.color = 'White'; var ok = CAT.styles[it.style].sizes; Object.keys(it.sizes).forEach(function (z) { if (ok.indexOf(z) < 0) delete it.sizes[z]; }); render(); }
+        else if (k) it[k] = e.target.value;
+        requote();
+      });
+      d.addEventListener('input', function (e) {
+        var z = e.target.getAttribute('data-size'); if (!z) return;
+        var n = Math.max(0, Math.min(5000, parseInt(e.target.value, 10) || 0));
+        if (n) it.sizes[z] = n; else delete it.sizes[z];
+        counts(); requote();
+      });
+      var rm = d.querySelector('[data-rm]'); if (rm) rm.addEventListener('click', function () { items.splice(i, 1); render(); requote(0); });
+      box.appendChild(d);
+    });
+    counts();
+  }
+
+  function counts() {
+    var total = 0;
+    $$('#items .item').forEach(function (d, i) {
+      var it = items[i], n = Object.keys(it.sizes).reduce(function (a, z) { return a + it.sizes[z]; }, 0), el = d.querySelector('[data-count]');
+      total += n;
+      if (it.fixed) { el.textContent = n + ' of ' + it.need + (n === it.need ? ' ✓' : n < it.need ? ' (' + (it.need - n) + ' to go)' : ' (' + (n - it.need) + ' too many)'); el.className = 'count ' + (n === it.need ? 'good' : 'bad'); }
+      else { el.textContent = n + ' pieces'; el.className = 'count'; }
+    });
+    if (mode === 'custom' && items.length) {
+      var last = $$('#items .item [data-count]').pop();
+      if (last) { last.textContent += ' · order total ' + total + (total < 12 ? ' (12 minimum)' : total < 24 ? ' (add ' + (24 - total) + ' more to save $2 each)' : ' ✓'); last.className = 'count ' + (total < 12 ? 'bad' : 'good'); }
+    }
+  }
+  $('#add').addEventListener('click', function () { items.push(newItem('PC54')); render(); requote(0); });
+  $$('.choice').forEach(function (b) { b.addEventListener('click', function () { pick(b.getAttribute('data-pick')); }); });
+
+  /* ---------- delivery / tax ---------- */
+  function delivery() { return ($('input[name=delivery]:checked') || {}).value || 'deliver'; }
+  $$('input[name=delivery]').forEach(function (r) { r.addEventListener('change', function () { $('#addr').classList.toggle('hidden', delivery() === 'pickup'); requote(0); }); });
+  $('#zip').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 5); if (this.value.length === 5 || !this.value) requote(0); });
+  $('#exempt').addEventListener('change', function () { $('#certbox').classList.toggle('hidden', !this.checked); requote(0); });
+
+  function payload() {
+    return { type: mode === 'custom' ? 'custom' : 'pack', pack: mode, delivery: delivery(), zip: $('#zip').value, exempt: $('#exempt').checked,
+      items: items.map(function (it) { return { style: it.style, color: it.color, print: it.print, sizes: it.sizes }; }) };
+  }
+
+  function requote(delay) {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(function () {
+      if (!mode) return;
+      var seq = ++qSeq;
+      fetch('pay.php?a=quote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload()) })
+        .then(function (r) { return r.json(); }).then(function (q) { if (seq === qSeq) showQuote(q); })
+        .catch(function () { if (seq === qSeq) showQuote({ ok: false, error: 'Connection problem. Check your internet and try again.' }); });
+    }, delay === 0 ? 0 : 350);
+  }
+
+  function showQuote(q) {
+    quote = q;
+    var L = $('#lines');
+    if (!q.ok) {
+      L.innerHTML = '<li class="info">' + esc(q.error) + '</li>';
+      $('#sub').textContent = '–'; $('#tax').textContent = '–'; $('#total').textContent = '–'; $('#taxlbl').textContent = 'Sales tax';
+    } else {
+      L.innerHTML = q.lines.map(function (l) { return l.info ? '<li class="info"><span>' + esc(l.desc) + '</span></li>' : '<li><span>' + esc(l.desc) + (l.qty > 1 ? ' <small>(' + l.qty + ' × ' + money(l.unit) + ')</small>' : '') + '</span><span>' + money(l.amount) + '</span></li>'; }).join('');
+      $('#sub').textContent = money(q.subtotal);
+      if (q.exempt) { $('#taxlbl').textContent = 'Sales tax (exempt)'; $('#tax').textContent = '$0.00'; }
+      else if (q.tax_ok) { $('#taxlbl').textContent = 'Sales tax (' + q.county + ' Co. ' + (Math.round(q.rate * 1000) / 10) + '%)'; $('#tax').textContent = money(q.tax); }
+      else { $('#taxlbl').textContent = 'Sales tax'; $('#tax').textContent = 'add ZIP'; }
+      $('#total').textContent = q.tax_ok || q.exempt ? money(q.total) : money(q.subtotal) + ' + tax';
+    }
+    var exempt = $('#exempt').checked;
+    $('#exemptBtn').classList.toggle('hidden', !exempt);
+    $('#pp').classList.toggle('hidden', exempt);
+    if (q.ok && !q.tax_ok && $('#zip').value.length === 5 && delivery() === 'deliver') showMsg(esc(q.tax_error)); else if (msg.className.indexOf('err') > -1 && !msg.dataset.keep) clearMsg();
+  }
+
+  /* ---------- checks before paying ---------- */
+  function problems() {
+    if (!mode) return 'Pick a Crew Pack or build your own.';
+    if (!quote || !quote.ok) return quote && quote.error ? quote.error : 'Finish your sizes first.';
+    if (delivery() === 'deliver' && (!$('#address').value.trim() || !$('#city').value.trim())) return 'Add your delivery street address and city.';
+    if (!quote.tax_ok && !quote.exempt) return quote.tax_error || 'Add your delivery ZIP code.';
+    if ($('#exempt').checked && !$('#cert').files.length) return 'Upload your tax exemption certificate.';
+    if (!$('#business').value.trim() || !$('#name').value.trim()) return 'Add your business name and your name.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('#email').value.trim())) return 'Add a valid email so we can send your receipt and mockup.';
+    return '';
+  }
+  function formData() {
+    var fd = new FormData();
+    ['business', 'name', 'email', 'phone', 'address', 'city', 'need_by', 'notes'].forEach(function (k) { fd.append(k, $('#' + k).value); });
+    fd.append('company_website', f.company_website.value);
+    fd.append('src', src);
+    fd.append('order', JSON.stringify(payload()));
+    if ($('#logo').files[0]) fd.append('logo', $('#logo').files[0]);
+    if ($('#exempt').checked && $('#cert').files[0]) fd.append('cert', $('#cert').files[0]);
+    return fd;
+  }
+  function finish(orderNo, text) {
+    f.classList.add('hidden'); $('.promise').classList.add('hidden');
+    $('#doneText').innerHTML = text; $('#done').classList.remove('hidden'); window.scrollTo(0, 0);
+  }
+
+  $('#exemptBtn').addEventListener('click', function () {
+    var p = problems(); if (p) { showMsg(esc(p)); return; }
+    var b = this; b.disabled = true; b.textContent = 'Sending...';
+    fetch('pay.php?a=create', { method: 'POST', body: formData() }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.ok) { showMsg(esc(d.error || 'Something went wrong.')); return; }
+      track('generate_lead', { form: 'order_exempt' });
+      finish(d.orderNo, 'Order <b>' + esc(d.orderNo) + '</b> is in. We check your certificate within one business day, then send your mockup and a PayPal invoice with no sales tax.');
+    }).catch(function () { showMsg('Connection problem. Please try again or text 904-382-5885.'); })
+      .finally(function () { b.disabled = false; b.textContent = 'Send order for review'; });
+  });
+
+  /* ---------- PayPal ---------- */
+  function loadPayPal(cfg) {
+    if (!cfg.ready) { $('#pp').innerHTML = '<p class="note"><b>Online payment opens soon.</b> Text 904-382-5885 and we will send you a payment link today.</p>'; return; }
+    var s = document.createElement('script');
+    s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(cfg.clientId) + '&currency=USD&intent=capture&components=buttons&enable-funding=venmo';
+    s.onload = function () {
+      paypal.Buttons({
+        style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', height: 48 },
+        onClick: function (data, actions) {
+          var p = problems(); if (p) { showMsg(esc(p)); return actions.reject(); }
+          clearMsg(); return actions.resolve();
+        },
+        createOrder: function () {
+          return fetch('pay.php?a=create', { method: 'POST', body: formData() }).then(function (r) { return r.json(); }).then(function (d) {
+            if (!d.ok) { showMsg(esc(d.error || 'Could not start checkout.')); throw new Error(d.error); }
+            return d.id;
+          });
+        },
+        onApprove: function (data, actions) {
+          showMsg('Finishing your payment...', 'ok');
+          return fetch('pay.php?a=capture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: data.orderID }) })
+            .then(function (r) { return r.json(); }).then(function (d) {
+              if (d.retry) { showMsg(esc(d.error)); return actions.restart(); }
+              if (!d.ok) { showMsg(esc(d.error || 'Payment did not go through.')); return; }
+              track('purchase', { value: d.paid, currency: 'USD', transaction_id: d.orderNo });
+              finish(d.orderNo, 'Order <b>' + esc(d.orderNo) + '</b> is paid (' + money(d.paid) + '). We send your mockup within one business day. Nothing prints until you approve it.');
+            });
+        },
+        onError: function () { showMsg('Something went wrong with checkout. You have not been charged. Please try again or text 904-382-5885.'); }
+      }).render('#pp');
+    };
+    s.onerror = function () { $('#pp').innerHTML = '<p class="note">Checkout could not load. Text 904-382-5885 and we will send a payment link.</p>'; };
+    document.head.appendChild(s);
+  }
+
+  Promise.all([fetch('pay.php?catalog=1').then(function (r) { return r.json(); }), fetch('pay.php?config=1').then(function (r) { return r.json(); })])
+    .then(function (res) {
+      CAT = res[0]; loadPayPal(res[1]);
+      var start = new URLSearchParams(location.search).get('pack');
+      if (start === 'starter' || start === 'premium' || start === 'custom') pick(start);
+    })
+    .catch(function () { $('#lines').innerHTML = '<li class="info">Could not load the order form. Please refresh, or text 904-382-5885.</li>'; });
+})();
+</script>
+</body>
+</html>
