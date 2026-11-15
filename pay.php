@@ -61,7 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (($_GET['a'] ?? '') === 'reminders') {
         $key = trim((string)($cfg['cron_key'] ?? ''));
         if ($key === '' || !hash_equals($key, (string)($_GET['key'] ?? ''))) fail('Not allowed', 403);
-        out(['ok' => true, 'sent' => send_reminders(50)]);
+        // add &now=1 to test: sends for any unfinished order at least 1 minute old
+        out(['ok' => true, 'sent' => send_reminders(50, isset($_GET['now']) ? 60 : 7200)]);
     }
     if (isset($_GET['tick'])) { maybe_send_reminders(); out(['ok' => true]); }
     fail('Not found', 404);
@@ -161,7 +162,7 @@ function draft_dir() { $d = store_dir() . '/drafts'; if (!is_dir($d)) @mkdir($d,
 function draft_path($email) { return draft_dir() . '/' . hash('sha256', strtolower(trim($email))) . '.json'; }
 function draft_done($email) { $p = draft_path($email); if (is_file($p)) @unlink($p); }
 
-function send_reminders($limit = 20) {
+function send_reminders($limit = 20, $minAge = 7200) {
     global $cfg;
     $sent = 0;
     foreach (glob(draft_dir() . '/*.json') ?: [] as $file) {
@@ -170,7 +171,7 @@ function send_reminders($limit = 20) {
         if (!$d) { @unlink($file); continue; }
         $age = time() - (int)$d['updated'];
         if ($age > 7 * 86400) { @unlink($file); continue; }            // clean up old ones
-        if (!empty($d['reminded']) || $age < 2 * 3600 || $age > 3 * 86400) continue;
+        if (!empty($d['reminded']) || $age < $minAge || $age > 3 * 86400) continue;
         $d['reminded'] = time();
         file_put_contents($file, json_encode($d), LOCK_EX);
         $c = $d['contact']; $q = si_quote($d['order']);
