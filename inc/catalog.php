@@ -9,7 +9,7 @@ const SI_PRICE_RULES = [
     'min_pieces'      => 12,   // smallest custom order
     'small_run_under' => 24,   // under this many pieces...
     'small_run_add'   => 2,    // ...add this per piece
-    'size_add'        => ['2XL' => 6, '3XL' => 9, '4XL' => 9, '5XL' => 9, '6XL' => 9],
+    'size_add'        => ['2XL' => 2, '3XL' => 3, '4XL' => 4, '5XL' => 5, '6XL' => 6],
 ];
 
 // Florida destination-based sales tax: 6% state + county surtax (DR-15DSS, calendar year 2026).
