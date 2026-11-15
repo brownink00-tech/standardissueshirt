@@ -32,7 +32,7 @@ $cfgPath = dirname(__DIR__) . '/si-config.php';
 $cfg = is_file($cfgPath) ? (require $cfgPath) : [];
 $ppId  = trim((string)($cfg['paypal_client_id'] ?? ''));
 $ppSec = trim((string)($cfg['paypal_secret'] ?? ''));
-$ppEnv = ($cfg['paypal_env'] ?? 'sandbox') === 'live' ? 'live' : 'sandbox';
+$ppEnv = strtolower(trim((string)($cfg['paypal_env'] ?? 'sandbox'))) === 'live' ? 'live' : 'sandbox';
 $ppApi = $ppEnv === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
 
 const SI_BRAND = 'Standard Issue Shirt Co.';
