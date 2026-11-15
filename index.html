@@ -182,6 +182,17 @@ footer a{color:#fff}
 .social:empty{display:none}
 .social a{display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;border:2px solid #fff}
 .social svg{width:18px;height:18px;fill:#fff}
+/* referral pop-up: shows once in a while, closes itself */
+.refpop{position:fixed;right:18px;bottom:76px;z-index:40;width:min(340px,calc(100vw - 24px));background:var(--olive);color:#fff;border:3px solid var(--ink);box-shadow:8px 8px 0 var(--hi);padding:16px 18px 14px;transform:translateY(20px);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
+.refpop.show{opacity:1;transform:none;pointer-events:auto}
+.refpop b{display:block;font-family:var(--display);font-weight:400;font-size:24px;text-transform:uppercase;line-height:1.05;margin-bottom:6px}
+.refpop p{margin:0 0 12px;font-size:15px}
+.refpop .go{display:inline-block;background:var(--hi);color:var(--ink);font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:13px;padding:10px 14px;text-decoration:none}
+.refpop .x{position:absolute;top:6px;right:8px;background:none;border:0;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:4px}
+.refpop .tm{position:absolute;left:0;bottom:0;height:4px;background:var(--hi);width:100%}
+.refpop.show .tm{animation:refT linear forwards}
+@keyframes refT{to{width:0}}
+@media (max-width:640px){.refpop{right:12px;bottom:80px}}
 /* sticky mobile bar */
 .mbar{display:none}
 @media (max-width:820px){
@@ -400,6 +411,13 @@ footer a{color:#fff}
 </div></footer>
 
 <button class="totop" id="totop" type="button" aria-label="Back to top">&uarr;</button>
+<div class="refpop" id="refpop" role="dialog" aria-label="Referral reward" aria-hidden="true">
+  <button class="x" type="button" aria-label="Close">×</button>
+  <b>Know a crew that needs shirts?</b>
+  <p>Send us a Jacksonville business. When they place their first order, <span class="js-reward">you get a $25 gift card</span>.</p>
+  <a class="go" href="#refer" data-track="refpop_click">Refer a business</a>
+  <div class="tm"></div>
+</div>
 <nav class="mbar" aria-label="Quick actions">
   <a class="t js-text" href="sms:+19043825885" data-track="text_click_mobilebar">Text your logo</a>
   <a class="m" href="#mockup" data-track="cta_mobilebar_mockup">Free mockup</a>
@@ -454,6 +472,34 @@ window.SI = {
     soc.appendChild(a);
   });
   if (SI.referralReward) document.querySelectorAll('.js-reward').forEach(function (b) { b.textContent = SI.referralReward; });
+  /* --- referral pop-up: after 25s or halfway down the page, closes itself after 15s,
+         comes back after 3 days, never again once they send a referral --- */
+  (function () {
+    var POP = { delay: 25000, showFor: 15000, every: 3 * 864e5 };
+    var pop = document.getElementById('refpop'); if (!pop) return;
+    var st = {}; try { st = JSON.parse(localStorage.getItem('si_refpop') || '{}'); } catch (e) {}
+    function save() { try { localStorage.setItem('si_refpop', JSON.stringify(st)); } catch (e) {} }
+    if (st.done || (st.last && Date.now() - st.last < POP.every)) return;
+    var shown = false, hideT;
+    function hide() { pop.classList.remove('show'); pop.setAttribute('aria-hidden', 'true'); clearTimeout(hideT); }
+    function show() {
+      if (shown) return; var r = document.getElementById('refer');
+      if (r && r.getBoundingClientRect().top < innerHeight && r.getBoundingClientRect().bottom > 0) return; // already looking at it
+      shown = true; st.last = Date.now(); save();
+      pop.querySelector('.tm').style.animationDuration = POP.showFor + 'ms';
+      pop.classList.add('show'); pop.setAttribute('aria-hidden', 'false');
+      hideT = setTimeout(hide, POP.showFor);
+      track('refpop_show', {});
+    }
+    pop.querySelector('.x').addEventListener('click', hide);
+    pop.querySelector('.go').addEventListener('click', hide);
+    pop.addEventListener('mouseenter', function () { clearTimeout(hideT); pop.querySelector('.tm').style.animationPlayState = 'paused'; });
+    setTimeout(show, POP.delay);
+    window.addEventListener('scroll', function () { if (scrollY > (document.body.scrollHeight - innerHeight) * 0.5) setTimeout(show, 1500); }, { passive: true });
+    document.addEventListener('si:referral', function () { st.done = true; save(); hide(); });
+  })();
+  fetch('pay.php?tick=1').catch(function () {});
+
 
   /* --- remember the QR/link code for 90 days so the rep still gets credit next week --- */
   var src = '';
@@ -522,6 +568,7 @@ window.SI = {
             Array.prototype.forEach.call(f.children, function (c) { if (c !== msg) c.style.display = 'none'; });
             show('ok', THANKS[mode]);
             track(mode === 'referral' ? 'referral_submit' : 'generate_lead', { form: mode, src: src });
+            if (mode === 'referral') document.dispatchEvent(new Event('si:referral'));
           } else {
             if (window.turnstile && ts && ts._tsId !== undefined) { try { turnstile.reset(ts._tsId); } catch (e) {} }
             show('err', (d.error || 'Something went wrong.') + ' You can also <a href="' + BACKUP + '" target="_blank" rel="noopener">use our backup form</a> or text 904-382-5885.');

@@ -17,6 +17,13 @@
  *   POST pay.php?a=quote       JSON order -> price breakdown
  *   POST pay.php?a=create      form + order -> PayPal order id (or tax-exempt review)
  *   POST pay.php?a=capture     {id} -> takes payment, saves to Airtable, sends emails
+ *   POST pay.php?a=draft       saves an unfinished order (once we have an email) for the reminder
+ *   GET  pay.php?resume=TOKEN  the saved order, so the reminder link reopens it
+ *   GET  pay.php?a=reminders&key=CRON_KEY   sends due reminders (Hostinger cron, every 30 min)
+ *
+ * Unfinished-order reminder: one email about 2 hours after someone fills in their email and leaves
+ * without paying (only within 3 days). crew@ gets a copy and the lead goes into Airtable.
+ * Optional in si-config.php:  'cron_key' => 'any-long-random-text',
  */
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');
@@ -41,8 +48,22 @@ const AT_BASE  = 'appRVSSHWg3NVmkgq';
 const AT_TABLE = 'tblR2n3jDru94J6tp';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    if (isset($_GET['config'])) out(['ok' => true, 'clientId' => $ppId, 'env' => $ppEnv, 'ready' => $ppId !== '' && $ppSec !== '']);
+    if (isset($_GET['config'])) { maybe_send_reminders(); out(['ok' => true, 'clientId' => $ppId, 'env' => $ppEnv, 'ready' => $ppId !== '' && $ppSec !== '']); }
     if (isset($_GET['catalog'])) out(['ok' => true] + si_catalog());
+    if (isset($_GET['resume'])) {
+        $t = preg_replace('/[^a-f0-9]/', '', (string)$_GET['resume']);
+        foreach (glob(draft_dir() . '/*.json') ?: [] as $file) {
+            $d = json_decode((string)@file_get_contents($file), true);
+            if ($d && $t !== '' && hash_equals($d['token'], $t)) out(['ok' => true, 'order' => $d['order'], 'contact' => $d['contact']]);
+        }
+        fail('That saved order has expired. Please start a new one.', 404);
+    }
+    if (($_GET['a'] ?? '') === 'reminders') {
+        $key = trim((string)($cfg['cron_key'] ?? ''));
+        if ($key === '' || !hash_equals($key, (string)($_GET['key'] ?? ''))) fail('Not allowed', 403);
+        out(['ok' => true, 'sent' => send_reminders(50)]);
+    }
+    if (isset($_GET['tick'])) { maybe_send_reminders(); out(['ok' => true]); }
     fail('Not found', 404);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') fail('Method not allowed', 405);
@@ -135,6 +156,52 @@ function send_mail($to, $subject, $body) {
 
 function money($n) { return '$' . number_format((float)$n, 2); }
 
+/* ---------- unfinished orders (abandoned cart) ---------- */
+function draft_dir() { $d = store_dir() . '/drafts'; if (!is_dir($d)) @mkdir($d, 0700, true); return $d; }
+function draft_path($email) { return draft_dir() . '/' . hash('sha256', strtolower(trim($email))) . '.json'; }
+function draft_done($email) { $p = draft_path($email); if (is_file($p)) @unlink($p); }
+
+function send_reminders($limit = 20) {
+    global $cfg;
+    $sent = 0;
+    foreach (glob(draft_dir() . '/*.json') ?: [] as $file) {
+        if ($sent >= $limit) break;
+        $d = json_decode((string)@file_get_contents($file), true);
+        if (!$d) { @unlink($file); continue; }
+        $age = time() - (int)$d['updated'];
+        if ($age > 7 * 86400) { @unlink($file); continue; }            // clean up old ones
+        if (!empty($d['reminded']) || $age < 2 * 3600 || $age > 3 * 86400) continue;
+        $d['reminded'] = time();
+        file_put_contents($file, json_encode($d), LOCK_EX);
+        $c = $d['contact']; $q = si_quote($d['order']);
+        $first = $c['name'] !== '' ? explode(' ', $c['name'])[0] : 'there';
+        $link = 'https://standardissueshirt.com/order.html?resume=' . $d['token'];
+        $what = $q['ok'] ? ' (' . money($q['subtotal']) . ' before tax)' : '';
+        send_mail($c['email'], 'Your shirt order is saved, ' . $first,
+            "Hi $first,\n\nLooks like you started an order with Standard Issue Shirt Co. and didn't get to finish$what. No problem, we saved it for you:\n\n$link\n\n"
+            . "Nothing prints until you approve your free mockup, and if we can't get it right you get a full refund.\n\n"
+            . "Have a question first, or want us to put it together for you? Just reply here or call or text 904-382-5885.\n\n"
+            . "Michael Brown\nStandard Issue Shirt Co.\nstandardissueshirt.com\n\n(You're getting this one reminder because you started an order on our site. We won't send another.)\n");
+        $notes = "UNFINISHED ONLINE ORDER: started checkout, did not pay. Reminder email sent " . date('M j, g:ia') . ". Call or text them.\n\n"
+            . ($q['ok'] ? order_text($q, $c + ['delivery' => $d['order']['delivery'] ?? 'deliver', 'address' => '', 'city' => '', 'zip' => $d['order']['zip'] ?? '', 'need_by' => '', 'notes' => '']) : 'Order not complete yet.');
+        $f = ['Business Name' => $c['business'] !== '' ? $c['business'] : '(not given)', 'Contact Name' => $c['name'] !== '' ? $c['name'] : '(not given)',
+              'Email' => $c['email'], 'Status' => 'New', 'Notes' => $notes,
+              'What do you need?' => $q['ok'] ? $q['needs'] : ['Not sure yet'], 'Source' => 'Other'];
+        if ($c['phone'] !== '') $f['Phone'] = $c['phone'];
+        if ($q['ok']) $f['Estimated quantity'] = $q['pieces'];
+        airtable_save($f);
+        send_mail($cfg['notify_email'] ?? 'crew@standardissueshirt.com', 'Unfinished order: ' . ($c['business'] ?: $c['email']), $notes . "\n\nContact: " . $c['name'] . ', ' . $c['email'] . ($c['phone'] ? ', ' . $c['phone'] : '') . "\nTheir saved order link: $link");
+        $sent++;
+    }
+    return $sent;
+}
+function maybe_send_reminders() {   // runs on normal site traffic too, at most every 15 minutes
+    $lock = store_dir() . '/.reminders';
+    if (is_file($lock) && time() - filemtime($lock) < 900) return;
+    @touch($lock);
+    send_reminders(5);
+}
+
 function order_text($q, $c) {
     $t = [];
     foreach ($q['lines'] as $l) {
@@ -146,7 +213,7 @@ function order_text($q, $c) {
     else $t[] = '  Sales tax (' . $q['county'] . ' County, ' . rtrim(rtrim(number_format($q['rate'] * 100, 2), '0'), '.') . '%)  ' . money($q['tax']);
     $t[] = '  Total  ' . money($q['total']);
     $t[] = '';
-    $t[] = $c['delivery'] === 'pickup' ? 'Pickup: our Jacksonville shop' : 'Deliver to: ' . $c['address'] . ', ' . $c['city'] . ', FL ' . $c['zip'];
+    $t[] = $c['delivery'] === 'pickup' ? 'Pickup: our Jacksonville shop' : ($c['address'] !== '' ? 'Deliver to: ' . $c['address'] . ', ' . $c['city'] . ', FL ' . $c['zip'] : 'Delivery ZIP: ' . ($c['zip'] ?: 'not given yet'));
     if ($c['need_by']) $t[] = 'Need by: ' . $c['need_by'];
     if ($c['notes']) $t[] = 'Notes: ' . $c['notes'];
     return implode("\n", $t);
@@ -171,6 +238,20 @@ function airtable_fields($q, $c, $orderNo) {
     if (!empty($c['logo'])) $f['Logo file'] = [$c['logo']];
     if (!empty($c['cert'])) $f['Tax certificate'] = [$c['cert']];
     return $f;
+}
+
+/* ---------- save an unfinished order ---------- */
+if ($a === 'draft') {
+    $b = json_body();
+    $c = ['email' => clean_str($b['email'] ?? '', 254), 'name' => clean_str($b['name'] ?? ''), 'business' => clean_str($b['business'] ?? ''), 'phone' => clean_str($b['phone'] ?? '', 40)];
+    if (!filter_var($c['email'], FILTER_VALIDATE_EMAIL) || !empty($b['company_website'])) out(['ok' => false]);
+    $order = is_array($b['order'] ?? null) ? $b['order'] : [];
+    $path = draft_path($c['email']);
+    $old = is_file($path) ? json_decode((string)file_get_contents($path), true) : null;
+    $d = ['token' => $old['token'] ?? bin2hex(random_bytes(16)), 'contact' => $c, 'order' => $order,
+          'src' => clean_str($b['src'] ?? '', 40), 'updated' => time(), 'reminded' => $old['reminded'] ?? 0];
+    file_put_contents($path, json_encode($d), LOCK_EX);
+    out(['ok' => true]);
 }
 
 /* ---------- quote ---------- */
@@ -220,6 +301,7 @@ if ($a === 'create') {
             . "Next, we send your mockup and a PayPal invoice for " . money($q['total']) . " (no sales tax). Printing starts once it's paid and you approve the mockup.\n\n"
             . "Your order:\n" . order_text($q, $c) . "\n\nQuestions? Reply here or call or text 904-382-5885.\n\nMichael Brown\nStandard Issue Shirt Co.\nstandardissueshirt.com\n");
         send_mail($cfg['notify_email'] ?? 'crew@standardissueshirt.com', "Tax-exempt order to review: $orderNo, " . $c['business'], $f['Notes']);
+        draft_done($c['email']);
         out(['ok' => true, 'exempt' => true, 'orderNo' => $orderNo]);
     }
 
@@ -292,9 +374,11 @@ if ($a === 'capture') {
         . "Nothing prints until you approve your mockup. If we can't get it right, we refund you in full.\n\n"
         . (empty($c['logo']) ? "Didn't attach your logo? Just reply to this email with it. Any file works.\n\n" : '')
         . "Your order $orderNo:\n" . order_text($q, $c) . "\n\nYour card statement will show PAYPAL *" . SI_DESCRIPTOR . ".\n\n"
+        . "Know another business that needs shirts? Send them our way at standardissueshirt.com/#refer. When they place their first order, you get a $25 gift card.\n\n"
         . "Questions? Reply here or call or text 904-382-5885.\n\nMichael Brown\nStandard Issue Shirt Co.\nstandardissueshirt.com\n");
     send_mail($cfg['notify_email'] ?? 'crew@standardissueshirt.com', "PAID online order $orderNo, " . $c['business'] . ', ' . money($paid),
         $f['Notes'] . "\n\nCustomer: " . $c['name'] . ', ' . $c['email'] . ($c['phone'] ? ', ' . $c['phone'] : '') . (empty($c['logo']) ? "\nNo logo uploaded yet." : "\nLogo: " . $c['logo']['url']));
+    draft_done($c['email']);
     out(['ok' => true, 'orderNo' => $orderNo, 'paid' => $paid]);
 }
 

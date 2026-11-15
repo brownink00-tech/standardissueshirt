@@ -81,6 +81,8 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid v
 .trust{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:10px;line-height:1.7}
 .done{border:3px solid var(--olive);padding:28px;margin:30px 0 60px;background:var(--stone)}
 .done h2{font-family:var(--display);font-weight:400;font-size:44px;text-transform:uppercase;margin:0 0 8px;line-height:1}
+.refbox{border:3px dashed var(--ink);background:#fff;padding:16px 18px;margin:16px 0;font-size:16px}
+.refbtn{display:inline-block;margin-top:10px;background:var(--hi);color:var(--ink);font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:10px 14px;text-decoration:none;font-size:14px}
 footer{background:var(--olive);color:#fff;font-size:14px}
 footer .wrap{padding-block:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
 footer a{color:#fff}
@@ -141,7 +143,7 @@ footer a{color:#fff}
         <div class="two">
           <div><label for="business">Business name *</label><input id="business" name="business" type="text" autocomplete="organization"></div>
           <div><label for="name">Your name *</label><input id="name" name="name" type="text" autocomplete="name"></div>
-          <div><label for="email">Email *</label><input id="email" name="email" type="email" autocomplete="email"></div>
+          <div><label for="email">Email *</label><input id="email" name="email" type="email" autocomplete="email"><div class="hint">We save your order as you go. If you get pulled away, we send one email with a link to finish.</div></div>
           <div><label for="phone">Mobile</label><input id="phone" name="phone" type="tel" autocomplete="tel"></div>
         </div>
         <div class="hp" aria-hidden="true"><input name="company_website" type="text" tabindex="-1" autocomplete="off"></div>
@@ -168,6 +170,7 @@ footer a{color:#fff}
     <h2>You're all set</h2>
     <p id="doneText"></p>
     <p>Check your email for your receipt. Questions? Call or text <a href="sms:+19043825885">904-382-5885</a>.</p>
+    <div class="refbox"><b>Know another crew that needs shirts?</b> Send them our way. When they place their first order, you get a $25 gift card. <a class="refbtn" href="/#refer">Refer a business →</a></div>
     <p><a href="/">Back to standardissueshirt.com</a></p>
   </div>
 </main>
@@ -300,6 +303,41 @@ footer a{color:#fff}
     if (q.ok && !q.tax_ok && $('#zip').value.length === 5 && delivery() === 'deliver') showMsg(esc(q.tax_error)); else if (msg.className.indexOf('err') > -1 && !msg.dataset.keep) clearMsg();
   }
 
+  /* ---------- save the unfinished order so we can send one reminder ---------- */
+  var dTimer = null;
+  function saveDraft() {
+    clearTimeout(dTimer);
+    dTimer = setTimeout(function () {
+      var em = $('#email').value.trim();
+      if (!mode || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return;
+      fetch('pay.php?a=draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+        body: JSON.stringify({ email: em, name: $('#name').value, business: $('#business').value, phone: $('#phone').value, src: src, company_website: f.company_website.value, order: payload() }) }).catch(function () {});
+    }, 1200);
+  }
+  f.addEventListener('change', saveDraft);
+  ['#email', '#name', '#business', '#phone'].forEach(function (id) { $(id).addEventListener('blur', saveDraft); });
+
+  function resume(tok) {
+    return fetch('pay.php?resume=' + encodeURIComponent(tok)).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.ok) { showMsg(esc(d.error)); return false; }
+      var o = d.order || {}, c = d.contact || {};
+      pick(o.type === 'pack' ? o.pack : 'custom');
+      if (Array.isArray(o.items) && o.items.length) {
+        items = o.items.map(function (it, i) {
+          var base = items[i] || newItem(it.style); var n = Object.assign({}, base, { color: it.color || 'White', sizes: it.sizes || {} });
+          if (!base.fixed) { n.style = CAT.styles[it.style] ? it.style : 'PC54'; n.print = it.print === 'fb' ? 'fb' : 'front'; }
+          return n;
+        });
+      }
+      if (o.delivery === 'pickup') { $('input[name=delivery][value=pickup]').checked = true; $('#addr').classList.add('hidden'); }
+      if (o.zip) $('#zip').value = o.zip;
+      ['email', 'name', 'business', 'phone'].forEach(function (k) { if (c[k]) $('#' + k).value = c[k]; });
+      render(); requote(0);
+      showMsg('Welcome back! Your order is saved. Check it over, add your logo and address, and pay when ready.', 'ok');
+      return true;
+    }).catch(function () { return false; });
+  }
+
   /* ---------- checks before paying ---------- */
   function problems() {
     if (!mode) return 'Pick a Crew Pack or build your own.';
@@ -375,8 +413,9 @@ footer a{color:#fff}
   Promise.all([fetch('pay.php?catalog=1').then(function (r) { return r.json(); }), fetch('pay.php?config=1').then(function (r) { return r.json(); })])
     .then(function (res) {
       CAT = res[0]; loadPayPal(res[1]);
-      var start = new URLSearchParams(location.search).get('pack');
-      if (start === 'starter' || start === 'premium' || start === 'custom') pick(start);
+      var qs = new URLSearchParams(location.search), start = qs.get('pack');
+      if (qs.get('resume')) resume(qs.get('resume'));
+      else if (start === 'starter' || start === 'premium' || start === 'custom') pick(start);
     })
     .catch(function () { $('#lines').innerHTML = '<li class="info">Could not load the order form. Please refresh, or text 904-382-5885.</li>'; });
 })();
