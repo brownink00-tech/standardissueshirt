@@ -179,14 +179,16 @@ footer a{color:#fff}
 
 <script>
 (function () {
-  var CAT = null, mode = null, items = [], quote = null, qTimer = null, qSeq = 0;
+  var CAT = null, mode = null, items = [], quote = null, qTimer = null, qSeq = 0, ppActions = null;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var f = $('#f'), msg = $('#msg');
   function money(n) { return '$' + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function track(ev, p) { try { if (window.gtag) gtag('event', ev, p || {}); if (window.fbq && ev === 'purchase') fbq('track', 'Purchase', { value: p.value, currency: 'USD' }); } catch (e) {} }
-  function showMsg(t, cls) { msg.className = 'msg ' + (cls || 'err'); msg.innerHTML = t; }
+  function showMsg(t, cls) { msg.className = 'msg ' + (cls || 'err'); msg.innerHTML = t; if (!cls || cls === 'err') try { msg.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }
+  /* PayPal stays switched off until the order is complete, so a phone never opens an empty checkout window */
+  function syncPay() { if (ppActions) { if (problems()) ppActions.disable(); else ppActions.enable(); } }
   function clearMsg() { msg.className = 'msg'; msg.textContent = ''; }
 
   var src = '';
@@ -297,6 +299,7 @@ footer a{color:#fff}
       else { $('#taxlbl').textContent = 'Sales tax'; $('#tax').textContent = 'add ZIP'; }
       $('#total').textContent = q.tax_ok || q.exempt ? money(q.total) : money(q.subtotal) + ' + tax';
     }
+    syncPay();
     var exempt = $('#exempt').checked;
     $('#exemptBtn').classList.toggle('hidden', !exempt);
     $('#pp').classList.toggle('hidden', exempt);
@@ -315,6 +318,8 @@ footer a{color:#fff}
     }, 1200);
   }
   f.addEventListener('change', saveDraft);
+  f.addEventListener('input', function () { syncPay(); });
+  f.addEventListener('change', function () { syncPay(); });
   ['#email', '#name', '#business', '#phone'].forEach(function (id) { $(id).addEventListener('blur', saveDraft); });
 
   function resume(tok) {
@@ -384,13 +389,14 @@ footer a{color:#fff}
     s.onload = function () {
       paypal.Buttons({
         style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay', height: 48 },
-        onClick: function (data, actions) {
-          var p = problems(); if (p) { showMsg(esc(p)); return actions.reject(); }
-          clearMsg(); return actions.resolve();
+        onInit: function (data, actions) { ppActions = actions; syncPay(); },
+        onClick: function () {
+          var p = problems(); if (p) { showMsg(esc(p)); return false; }
+          clearMsg();
         },
         createOrder: function () {
           return fetch('pay.php?a=create', { method: 'POST', body: formData() }).then(function (r) { return r.json(); }).then(function (d) {
-            if (!d.ok) { showMsg(esc(d.error || 'Could not start checkout.')); throw new Error(d.error); }
+            if (!d.ok) { msg.dataset.keep = '1'; showMsg(esc(d.error || 'Could not start checkout.')); throw new Error(d.error); }
             return d.id;
           });
         },
@@ -404,7 +410,8 @@ footer a{color:#fff}
               finish(d.orderNo, 'Order <b>' + esc(d.orderNo) + '</b> is paid (' + money(d.paid) + '). We send your mockup within one business day. Nothing prints until you approve it.');
             });
         },
-        onError: function () { showMsg('Something went wrong with checkout. You have not been charged. Please try again or text 904-382-5885.'); }
+        onCancel: function () { showMsg('Checkout was closed before paying. Tap the button again when you are ready.', 'ok'); },
+        onError: function () { if (msg.dataset.keep) { delete msg.dataset.keep; return; } showMsg('Something went wrong with checkout. You have not been charged. Please try again or text 904-382-5885.'); }
       }).render('#pp');
     };
     s.onerror = function () { $('#pp').innerHTML = '<p class="note">Checkout could not load. Text 904-382-5885 and we will send a payment link.</p>'; };
