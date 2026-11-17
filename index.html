@@ -541,7 +541,7 @@ window.SI = {
   var tsKey = '';
   fetch('order.php?config=1').then(function (r) { return r.json(); }).then(function (c) {
     if (!c.siteKey) return; tsKey = c.siteKey;
-    window.siTs = function () { document.querySelectorAll('.js-ts').forEach(function (el) { el._tsId = turnstile.render(el, { sitekey: tsKey, theme: 'light' }); }); };
+    window.siTs = function () { document.querySelectorAll('.js-ts').forEach(function (el) { el._tsId = turnstile.render(el, { sitekey: tsKey, theme: 'light', appearance: 'interaction-only' }); }); };
     load('https://challenges.cloudflare.com/turnstile/v0/api.js?onload=siTs&render=explicit');
   }).catch(function () {});
 
