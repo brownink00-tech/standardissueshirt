@@ -31,6 +31,7 @@ header('Cache-Control: no-store');
 
 require __DIR__ . '/inc/catalog.php';
 require __DIR__ . '/inc/mail.php';
+require_once __DIR__ . '/inc/funnel.php';   // mockup follow-ups + lead prefill
 
 function out($a) { echo json_encode($a); exit; }
 function fail($msg, $code = 400, $extra = []) { http_response_code($code); out(['ok' => false, 'error' => $msg] + $extra); }
@@ -62,9 +63,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $key = trim((string)($cfg['cron_key'] ?? ''));
         if ($key === '' || !hash_equals($key, (string)($_GET['key'] ?? ''))) fail('Not allowed', 403);
         // add &now=1 to test: sends for any unfinished order at least 1 minute old
-        out(['ok' => true, 'sent' => send_reminders(50, isset($_GET['now']) ? 60 : 7200)]);
+        out(['ok' => true, 'sent' => send_reminders(50, isset($_GET['now']) ? 60 : 7200), 'followups' => send_followups(25)]);
     }
     if (isset($_GET['tick'])) { maybe_send_reminders(); out(['ok' => true]); }
+    if (isset($_GET['lead'])) {   // Approve & pay link from a mockup email: fill in their contact info
+        $rec = (string)$_GET['lead'];
+        if (!fn_check($rec, 'lead', (string)($_GET['k'] ?? ''))) fail('That link is not valid.', 403);
+        $r = fn_get($rec); if (!$r) fail('Could not load your details. Please fill them in below.', 404);
+        $lf = $r['fields'];
+        out(['ok' => true, 'contact' => ['name' => $lf['Contact Name'] ?? '', 'email' => $lf['Email'] ?? '', 'business' => $lf['Business Name'] ?? '', 'phone' => $lf['Phone'] ?? ''],
+             'pieces' => (int)($lf['Mockup pieces'] ?? 0)]);
+    }
     fail('Not found', 404);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') fail('Method not allowed', 405);
@@ -201,6 +210,7 @@ function maybe_send_reminders() {   // runs on normal site traffic too, at most 
     if (is_file($lock) && time() - filemtime($lock) < 900) return;
     @touch($lock);
     send_reminders(5);
+    try { send_followups(5); } catch (Throwable $e) { error_log('send_followups: ' . $e->getMessage()); }
 }
 
 function order_text($q, $c) {
@@ -379,6 +389,9 @@ if ($a === 'capture') {
         . "Questions? Reply here or call or text 904-382-5885.\n\nMichael Brown\nStandard Issue Shirt Co.\nstandardissueshirt.com\n");
     send_mail($cfg['notify_email'] ?? 'crew@standardissueshirt.com', "PAID online order $orderNo, " . $c['business'] . ', ' . money($paid),
         $f['Notes'] . "\n\nCustomer: " . $c['name'] . ', ' . $c['email'] . ($c['phone'] ? ', ' . $c['phone'] : '') . (empty($c['logo']) ? "\nNo logo uploaded yet." : "\nLogo: " . $c['logo']['url']));
+    if ($paid >= 1500 || ($q['pieces'] ?? 0) >= 50) {
+        send_mail(FN_OWNER, "Big Standard Issue order paid: $orderNo, " . $c['business'] . ', ' . money($paid), "Worth a personal thank-you call.\n\n" . $f['Notes'] . "\n\nCustomer: " . $c['name'] . ', ' . $c['email'] . ($c['phone'] ? ', ' . $c['phone'] : ''));
+    }
     draft_done($c['email']);
     out(['ok' => true, 'orderNo' => $orderNo, 'paid' => $paid]);
 }

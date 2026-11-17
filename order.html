@@ -356,6 +356,17 @@ footer a{color:#fff}
     }).catch(function () { return false; });
   }
 
+  // Approve & pay link from a mockup email: fill in who they are so they only pick sizes and pay
+  function fromMockup(rec, k) {
+    fetch('pay.php?lead=' + encodeURIComponent(rec) + '&k=' + encodeURIComponent(k)).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.ok) return;
+      ['email', 'name', 'business', 'phone'].forEach(function (key) { if (d.contact[key] && !$('#' + key).value) $('#' + key).value = d.contact[key]; });
+      try { gtag('event', 'mockup_approve_click', { pieces: d.pieces || 0 }); } catch (e) {}
+      showMsg('Welcome back! Your details are filled in. Pick your sizes and colors to match your mockup, then pay below.', 'ok');
+      saveDraft();
+    }).catch(function () {});
+  }
+
   /* ---------- checks before paying ---------- */
   function problems() {
     if (!mode) return 'Pick a Crew Pack or build your own.';
@@ -435,7 +446,10 @@ footer a{color:#fff}
       CAT = res[0]; loadPayPal(res[1]);
       var qs = new URLSearchParams(location.search), start = qs.get('pack');
       if (qs.get('resume')) resume(qs.get('resume'));
-      else if (start === 'starter' || start === 'premium' || start === 'custom') pick(start);
+      else {
+        if (start === 'starter' || start === 'premium' || start === 'custom') pick(start);
+        if (qs.get('lead')) fromMockup(qs.get('lead'), qs.get('k') || '');
+      }
     })
     .catch(function () { $('#lines').innerHTML = '<li class="info">Could not load the order form. Please refresh, or text 904-382-5885.</li>'; });
 })();

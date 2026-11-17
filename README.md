@@ -38,3 +38,10 @@ LocalBusiness + FAQ schema, `robots.txt`, `sitemap.xml`.
 
 ### Photos
 When real crew photos exist, save one as `img/crew.jpg` and change the hero `<img src="img/crew.svg">` to it.
+
+## Mockup funnel (Nov 2026)
+- New mockup or order request: `order.php` saves to Airtable, sends the customer the instant "got it" email, then `notify_art()` (inc/funnel.php) emails **art@mlxlpro.com** and crew@ with the details, logo link and a signed **Send mockup** link. Webstore or 50+ piece requests also go to mbrown@.
+- Ally opens the link (`mockup.php`), uploads the mockup (JPG/PNG best, PDF ok), picks the offer, pieces and total, and clicks Send. The customer gets the mockup from crew@ with an **Approve & pay** button (`order.html?lead=...` fills in their contact info). Airtable: Status = Mockup sent, Mockup, Mockup price, Mockup pieces, Mockup sent at.
+- Follow-ups (`send_followups()`) go out day 2, 5 and 9 after the mockup, only while Status is still **Mockup sent** and they have not paid. Runs with the existing reminder tick and the Hostinger cron (`pay.php?a=reminders&key=...`). **To stop follow-ups, change Status to Replied, Ordered or Lost.**
+- Already-paid orders: the mockup email asks them to reply "approved" and no follow-ups are sent.
+- Paid orders of $1,500+ or 50+ pieces, and big mockups, alert mbrown@.

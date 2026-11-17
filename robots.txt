@@ -1,3 +1,5 @@
 User-agent: *
 Disallow: /uploads/
 Sitemap: https://standardissueshirt.com/sitemap.xml
+Disallow: /mockup.php
+Disallow: /mockups/

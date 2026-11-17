@@ -1,0 +1,6 @@
+# Mockup images sent to customers: show images inline, never run code here
+<FilesMatch "\.(php|phtml|phar|html?|js|svg)$">
+  Require all denied
+</FilesMatch>
+Header set X-Content-Type-Options nosniff
+Options -Indexes
