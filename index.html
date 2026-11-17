@@ -31,6 +31,7 @@
   "email": "crew@standardissueshirt.com",
   "image": "https://standardissueshirt.com/img/og.png",
   "priceRange": "$$",
+  "openingHoursSpecification": [{"@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "08:00", "closes": "17:00"}],
   "address": {"@type": "PostalAddress", "addressLocality": "Jacksonville", "addressRegion": "FL", "addressCountry": "US"},
   "areaServed": [
     {"@type": "City", "name": "Jacksonville, FL"},
@@ -90,6 +91,7 @@ header .wrap{display:flex;justify-content:space-between;align-items:center;gap:1
 .hero{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center;padding-block:36px 12px}
 h1{font-family:var(--display);font-weight:400;font-size:clamp(72px,10vw,124px);line-height:.86;margin:0;text-transform:uppercase}
 .kicker{font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+h1 .kicker{display:block;line-height:1.4;white-space:normal}
 .deadline{display:inline-block;background:var(--hi);font-family:var(--mono);font-weight:600;font-size:14px;padding:7px 12px;text-transform:uppercase;letter-spacing:.06em;margin-top:16px}
 .lede{font-size:20px;max-width:560px;margin:16px 0 0;font-weight:500}
 .hero-ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
@@ -240,8 +242,7 @@ footer a{color:#fff}
 <main>
   <section class="wrap hero" id="top">
     <div>
-      <p class="kicker">Custom shirts for Jacksonville businesses</p>
-      <h1>Crew Pack</h1>
+      <h1><span class="kicker">Custom crew shirts for Jacksonville businesses</span>Crew Pack</h1>
       <div class="deadline">Pack pricing good through Dec 31</div>
       <p class="lede">Full color logos on shirts your team will actually wear. Shirts from $10, no setup fees. Printed locally in Jacksonville and hand delivered to your door.</p>
       <div class="hero-ctas">
@@ -434,7 +435,8 @@ window.SI = {
     linkedin: ""
   },
   cfBeacon: "",      // Cloudflare Web Analytics token (free). Dashboard > Analytics & Logs > Web Analytics > Add site
-  ga4: "",           // Google Analytics 4 ID, e.g. "G-XXXXXXX" (for ads later)
+  ga4: "G-SEFGVHGC4R", // Google Analytics 4: "Standard Issue Shirt Co." property (separate from MLXL)
+  googleAds: "AW-953663456", // Google Ads tag (shared Ads account)
   metaPixel: "",     // Meta Pixel ID (for Facebook/Instagram ads later)
   referralReward: "you get a $25 gift card"
 };
@@ -447,7 +449,7 @@ window.SI = {
   /* --- tracking loaders: only run when an ID is filled in --- */
   function load(src, attrs) { var s = document.createElement('script'); s.src = src; s.async = true; s.defer = true; for (var k in (attrs || {})) s.setAttribute(k, attrs[k]); document.head.appendChild(s); }
   if (SI.cfBeacon) load('https://static.cloudflareinsights.com/beacon.min.js', { 'data-cf-beacon': JSON.stringify({ token: SI.cfBeacon }) });
-  if (SI.ga4) { window.dataLayer = window.dataLayer || []; window.gtag = function () { dataLayer.push(arguments); }; gtag('js', new Date()); gtag('config', SI.ga4); load('https://www.googletagmanager.com/gtag/js?id=' + SI.ga4); }
+  if (SI.ga4) { window.dataLayer = window.dataLayer || []; window.gtag = function () { dataLayer.push(arguments); }; gtag('js', new Date()); gtag('config', SI.ga4); if (SI.googleAds) gtag('config', SI.googleAds); load('https://www.googletagmanager.com/gtag/js?id=' + SI.ga4); }
   if (SI.metaPixel) { !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js'); fbq('init', SI.metaPixel); fbq('track', 'PageView'); }
   function track(name, params) {
     try { if (window.gtag) gtag('event', name, params || {}); } catch (e) {}

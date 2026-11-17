@@ -31,7 +31,8 @@ LocalBusiness + FAQ schema, `robots.txt`, `sitemap.xml`.
 ### Settings (bottom of index.html, `window.SI`)
 - `social`: paste Instagram / Facebook / TikTok / Google / LinkedIn URLs. Icons appear in the footer only when filled in.
   Also add the same URLs to `"sameAs": []` in the LocalBusiness schema at the top.
-- `cfBeacon`: Cloudflare Web Analytics token (free visit counts). `ga4` / `metaPixel`: fill in when ads start.
+- `ga4`: G-SEFGVHGC4R ("Standard Issue Shirt Co." Analytics property, separate from MLXL). `googleAds`: AW-953663456. order.html has the same tags in its head.
+- `cfBeacon`: Cloudflare Web Analytics token (free visit counts). `metaPixel`: fill in when Meta ads start.
   Form submits fire `generate_lead` (GA4) / `Lead` (Meta) automatically.
 - `referralReward`: the referral offer text.
 
