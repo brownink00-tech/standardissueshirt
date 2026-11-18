@@ -47,8 +47,29 @@ function fn_at($method, $path = '', $body = null, $query = []) {
     if ($code < 200 || $code >= 300) { error_log("Airtable $method $path $code: $resp"); return null; }
     return json_decode($resp, true);
 }
-function fn_get($rec) { return fn_at('GET', '/' . $rec); }
-function fn_patch($rec, $fields) { return fn_at('PATCH', '/' . $rec, ['fields' => $fields, 'typecast' => true]); }
+/* Local copy of each lead, saved when the request comes in, so the Send mockup page still works
+   if the Airtable token cannot read records (it only needs write access for this). */
+function fn_lead_dir() {
+    $d = dirname(__DIR__, 2) . '/si-orders/leads';
+    if (!is_dir($d)) @mkdir($d, 0700, true);
+    if (is_dir($d) && is_writable($d)) return $d;
+    $d = __DIR__ . '/orders/leads';
+    if (!is_dir($d)) @mkdir($d, 0700, true);
+    return $d;
+}
+function fn_cache_put($rec, $fields) {
+    if (!preg_match('/^rec[A-Za-z0-9]{14}$/', (string)$rec)) return;
+    $p = fn_lead_dir() . "/$rec.json";
+    $old = is_file($p) ? (json_decode((string)file_get_contents($p), true) ?: []) : [];
+    file_put_contents($p, json_encode(['id' => $rec, 'fields' => array_merge($old['fields'] ?? [], $fields)]), LOCK_EX);
+}
+function fn_get($rec) {
+    $r = fn_at('GET', '/' . $rec);
+    if ($r) { fn_cache_put($rec, $r['fields'] ?? []); return $r; }
+    $p = fn_lead_dir() . "/$rec.json";
+    return is_file($p) ? json_decode((string)file_get_contents($p), true) : null;
+}
+function fn_patch($rec, $fields) { $r = fn_at('PATCH', '/' . $rec, ['fields' => $fields, 'typecast' => true]); if ($r) fn_cache_put($rec, $r['fields'] ?? $fields); return $r; }
 
 /* ---------- email ---------- */
 function fn_send($to, $subject, $text, $html = null) {
@@ -80,6 +101,7 @@ function fn_pay_link($rec, $pack = '') {
 /* ---------- 1. new request -> art@ ---------- */
 function notify_art($rec, $f) {
     if (!$rec) return;
+    fn_cache_put($rec, $f);
     $link = FN_SITE . '/mockup.php?id=' . $rec . '&k=' . fn_sign($rec, 'mockup');
     $logo = $f['Logo file'][0]['url'] ?? '';
     $lines = [
