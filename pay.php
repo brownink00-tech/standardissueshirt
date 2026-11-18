@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $r = fn_get($rec); if (!$r) fail('Could not load your details. Please fill them in below.', 404);
         $lf = $r['fields'];
         out(['ok' => true, 'contact' => ['name' => $lf['Contact Name'] ?? '', 'email' => $lf['Email'] ?? '', 'business' => $lf['Business Name'] ?? '', 'phone' => $lf['Phone'] ?? ''],
-             'pieces' => (int)($lf['Mockup pieces'] ?? 0)]);
+             'pieces' => (int)($lf['Mockup pieces'] ?? 0), 'mockup' => (string)($lf['Mockup URL'] ?? ''), 'note' => (string)($lf['Mockup note'] ?? '')]);
     }
     fail('Not found', 404);
 }
@@ -295,6 +295,13 @@ if ($a === 'create') {
     if (!$q['ok']) fail($q['error']);
     if (!$q['tax_ok']) fail($q['tax_error']);
 
+    // Came from a mockup email's Approve & pay button: remember which lead and mockup this pays for
+    $lead = (string)($_POST['lead'] ?? '');
+    if ($lead !== '' && fn_check($lead, 'lead', (string)($_POST['lead_k'] ?? ''))) {
+        $lr = fn_get($lead);
+        $c['lead'] = $lead;
+        $c['mockup'] = (string)($lr['fields']['Mockup URL'] ?? '');
+    }
     $c['logo'] = save_upload('logo', ['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'pdf', 'ai', 'eps', 'svg', 'psd', 'tif', 'tiff']);
     $orderNo = 'SI-' . date('ymd') . '-' . strtoupper(bin2hex(random_bytes(2)));
 
@@ -376,13 +383,20 @@ if ($a === 'capture') {
     $f = airtable_fields($q, $c, $orderNo);
     $f['Status'] = 'Ordered'; $f['Payment'] = 'Paid'; $f['Amount paid'] = $paid; $f['PayPal ID'] = $cap['id'];
     $f['Notes'] = $flag . "ONLINE ORDER $orderNo - PAID " . money($paid) . " by PayPal (" . $cap['id'] . "). Send mockup within 1 business day; print after approval.\n\n" . order_text($q, $c);
+    if (!empty($c['mockup'])) {
+        $f['Notes'] = "APPROVED MOCKUP (customer paid from the mockup email, so this is their approval): " . $c['mockup'] . "\n\n" . $f['Notes'];
+        $f['Mockup'] = [['url' => $c['mockup']]];
+    }
     if (!airtable_save($f)) error_log("PAID ORDER NOT SAVED TO AIRTABLE: $orderNo " . json_encode($f));
+    if (!empty($c['lead'])) fn_patch($c['lead'], ['Status' => 'Ordered', 'Order #' => $orderNo]);   // stops the follow-ups
 
     $first = explode(' ', $c['name'])[0];
     send_mail($c['email'], "You're all set, $first. Order $orderNo is paid",
         "Hi $first,\n\nThank you for your order with Standard Issue Shirt Co. Your payment of " . money($paid) . " went through.\n\n"
-        . "What happens next:\n1. We send your mockup within one business day.\n2. You approve it (or tell us what to change).\n3. We print here in Jacksonville and have it ready in 7 to 10 business days after approval.\n\n"
-        . "Nothing prints until you approve your mockup. If we can't get it right, we refund you in full.\n\n"
+        . (!empty($c['mockup'])
+            ? "Your mockup is approved: " . $c['mockup'] . "\n\nWhat happens next: we print here in Jacksonville and have it ready in 7 to 10 business days. We'll let you know when it's on the way.\n\n"
+            : "What happens next:\n1. We send your mockup within one business day.\n2. You approve it (or tell us what to change).\n3. We print here in Jacksonville and have it ready in 7 to 10 business days after approval.\n\n"
+              . "Nothing prints until you approve your mockup. If we can't get it right, we refund you in full.\n\n")
         . (empty($c['logo']) ? "Didn't attach your logo? Just reply to this email with it. Any file works.\n\n" : '')
         . "Your order $orderNo:\n" . order_text($q, $c) . "\n\nYour card statement will show PAYPAL *" . SI_DESCRIPTOR . ".\n\n"
         . "Know another business that needs shirts? Send them our way at standardissueshirt.com/#refer. When they place their first order, you get a $25 gift card.\n\n"

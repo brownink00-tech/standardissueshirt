@@ -60,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($pieces > 0) $upd['Mockup pieces'] = $pieces;
     if ($total > 0) $upd['Mockup price'] = $total;
     fn_patch($id, $upd);
+    fn_cache_put($id, ['Mockup URL' => $url, 'Mockup note' => $note]);   // our own link (Airtable's attachment links expire)
     if ($total >= 1500 || $pieces >= 50) {
         fn_send(FN_OWNER, 'Big Standard Issue mockup sent: ' . ($f['Business Name'] ?? ''), "Mockup sent to " . ($f['Contact Name'] ?? '') . " (" . $f['Email'] . ")\nPieces: $pieces\nTotal: " . fn_money($total) . "\nMockup: $url\n\nWorth a personal call.");
     }

@@ -16,6 +16,7 @@
  */
 
 require_once __DIR__ . '/mail.php';
+date_default_timezone_set('America/New_York');   // all dates in notes and emails are Eastern
 
 const FN_BASE  = 'appRVSSHWg3NVmkgq';
 const FN_TABLE = 'tblR2n3jDru94J6tp';

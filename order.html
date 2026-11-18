@@ -88,6 +88,7 @@ footer .wrap{padding-block:20px;display:flex;justify-content:space-between;flex-
 footer a{color:#fff}
 @media (max-width:900px){.grid{grid-template-columns:1fr}.sum{position:static}}
 @media (max-width:640px){.choices{grid-template-columns:1fr}.item .top{grid-template-columns:1fr 1fr}.item .top>div:first-child{grid-column:1/-1}.two{grid-template-columns:1fr}.mark{display:none}.tag{font-size:16px}}
+.approved-mockup{border:3px solid var(--olive,#3F4A2A);background:#fff;padding:18px;margin:0 0 26px}.approved-mockup h2{margin:0 0 10px}.approved-mockup img{max-width:100%;display:block;border:1px solid #ddd}.approved-mockup .note{margin:10px 0 0;color:#5b604f}
 </style>
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Standard Issue Shirt Co.">
@@ -357,10 +358,22 @@ footer a{color:#fff}
   }
 
   // Approve & pay link from a mockup email: fill in who they are so they only pick sizes and pay
+  var LEAD = null;
   function fromMockup(rec, k) {
     fetch('pay.php?lead=' + encodeURIComponent(rec) + '&k=' + encodeURIComponent(k)).then(function (r) { return r.json(); }).then(function (d) {
       if (!d.ok) return;
       ['email', 'name', 'business', 'phone'].forEach(function (key) { if (d.contact[key] && !$('#' + key).value) $('#' + key).value = d.contact[key]; });
+      LEAD = { id: rec, k: k };
+      if (d.mockup) {
+        var box = document.createElement('section');
+        box.className = 'approved-mockup';
+        box.innerHTML = '<h2>Your mockup</h2>' + (/\.pdf$/i.test(d.mockup)
+          ? '<p><a href="' + esc(d.mockup) + '" target="_blank" rel="noopener">Open your mockup (PDF)</a></p>'
+          : '<img src="' + esc(d.mockup) + '" alt="Your approved mockup">')
+          + (d.note ? '<p class="note">' + esc(d.note) + '</p>' : '')
+          + '<p class="note">Paying for this order approves this mockup. Want a change first? Reply to the mockup email or text 904-382-5885.</p>';
+        f.parentNode.insertBefore(box, f);
+      }
       try { gtag('event', 'mockup_approve_click', { pieces: d.pieces || 0 }); } catch (e) {}
       showMsg('Welcome back! Your details are filled in. Pick your sizes and colors to match your mockup, then pay below.', 'ok');
       saveDraft();
@@ -384,6 +397,7 @@ footer a{color:#fff}
     fd.append('company_website', f.company_website.value);
     fd.append('src', src);
     fd.append('order', JSON.stringify(payload()));
+    if (LEAD) { fd.append('lead', LEAD.id); fd.append('lead_k', LEAD.k); }
     if ($('#logo').files[0]) fd.append('logo', $('#logo').files[0]);
     if ($('#exempt').checked && $('#cert').files[0]) fd.append('cert', $('#cert').files[0]);
     return fd;
