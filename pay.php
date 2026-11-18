@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $r = fn_get($rec); if (!$r) fail('Could not load your details. Please fill them in below.', 404);
         $lf = $r['fields'];
         out(['ok' => true, 'contact' => ['name' => $lf['Contact Name'] ?? '', 'email' => $lf['Email'] ?? '', 'business' => $lf['Business Name'] ?? '', 'phone' => $lf['Phone'] ?? ''],
-             'pieces' => (int)($lf['Mockup pieces'] ?? 0), 'mockup' => (string)($lf['Mockup URL'] ?? ''), 'note' => (string)($lf['Mockup note'] ?? '')]);
+             'pieces' => (int)($lf['Mockup pieces'] ?? 0), 'mockup' => (string)($lf['Mockup URL'] ?? ''), 'note' => (string)($lf['Mockup note'] ?? ''), 'style' => (string)($lf['Mockup style'] ?? ''), 'color' => (string)($lf['Mockup color'] ?? '')]);
     }
     fail('Not found', 404);
 }

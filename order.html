@@ -190,6 +190,7 @@ footer a{color:#fff}
 
 <footer><div class="wrap"><div>Standard Issue Shirt Co. · Printed in Jacksonville, FL</div><div><a href="tel:+19043825885">904-382-5885</a> · <a href="mailto:crew@standardissueshirt.com">crew@standardissueshirt.com</a></div></div></footer>
 
+<script src="/js/swatches.js"></script>
 <script>
 (function () {
   var CAT = null, mode = null, items = [], quote = null, qTimer = null, qSeq = 0, ppActions = null;
@@ -231,7 +232,7 @@ footer a{color:#fff}
       if (!it.fixed) {
         top += '<div><label>Shirt</label><select data-k="style">' + Object.keys(CAT.styles).map(function (k) { var s = CAT.styles[k]; return '<option value="' + k + '"' + (k === it.style ? ' selected' : '') + '>' + esc(s.name) + ' ($' + s.price.front + '+)</option>'; }).join('') + '</select></div>';
       }
-      top += '<div><label>Color</label><select data-k="color">' + st.colors.map(function (c) { return '<option' + (c === it.color ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select></div>';
+      top += '<div><label>Color</label><div data-swatch></div></div>';
       if (!it.fixed) {
         top += '<div><label>Print</label><select data-k="print"><option value="front"' + (it.print === 'front' ? ' selected' : '') + '>Front ($' + st.price.front + ')</option><option value="fb"' + (it.print === 'fb' ? ' selected' : '') + '>Front + Back ($' + st.price.fb + ')</option></select></div>';
         top += items.length > 1 ? '<button type="button" class="rm" data-rm="1" aria-label="Remove">Remove</button>' : '<span></span>';
@@ -242,6 +243,7 @@ footer a{color:#fff}
         return '<div><label for="q' + i + z + '">' + z + '</label><input id="q' + i + z + '" type="number" min="0" max="5000" inputmode="numeric" data-size="' + z + '" value="' + v + '" placeholder="0">' + (up ? '<span class="up">+$' + up + '</span>' : '<span class="up">&nbsp;</span>') + '</div>';
       }).join('') + '</div>';
       d.innerHTML = styleSel + top + '<div class="hint">' + esc(st.note) + '</div>' + sz + '<div class="count" data-count></div>';
+      SISwatch.picker(d.querySelector('[data-swatch]'), st.colors, it.color, function (c) { it.color = c; requote(); });
       d.addEventListener('change', function (e) {
         var k = e.target.getAttribute('data-k');
         if (k === 'style') { it.style = e.target.value; it.color = 'White'; var ok = CAT.styles[it.style].sizes; Object.keys(it.sizes).forEach(function (z) { if (ok.indexOf(z) < 0) delete it.sizes[z]; }); render(); }
@@ -364,6 +366,13 @@ footer a{color:#fff}
       if (!d.ok) return;
       ['email', 'name', 'business', 'phone'].forEach(function (key) { if (d.contact[key] && !$('#' + key).value) $('#' + key).value = d.contact[key]; });
       LEAD = { id: rec, k: k };
+      if (d.color) {   // the shirt and color Ally mocked up
+        items.forEach(function (it, idx) {
+          if (d.style && !it.fixed && idx === 0 && CAT.styles[d.style]) it.style = d.style;
+          if ((!d.style || it.style === d.style || idx === 0) && CAT.styles[it.style].colors.indexOf(d.color) >= 0) it.color = d.color;
+        });
+        render(); requote(0);
+      }
       if (d.mockup) {
         var box = document.createElement('section');
         box.className = 'approved-mockup';

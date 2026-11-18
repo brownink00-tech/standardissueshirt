@@ -5,6 +5,7 @@
  * POST mockup.php                uploads the mockup, emails the customer, marks Airtable "Mockup sent"
  */
 require __DIR__ . '/inc/funnel.php';
+require __DIR__ . '/inc/catalog.php';
 header('X-Content-Type-Options: nosniff');
 header('X-Robots-Tag: noindex, nofollow');
 header('Cache-Control: no-store');
@@ -50,17 +51,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $total  = max(0, round((float)str_replace([',', '$'], '', (string)($_POST['total'] ?? '0')), 2));
     $pack   = in_array($_POST['pack'] ?? '', ['starter', 'premium', 'custom'], true) ? $_POST['pack'] : 'custom';
     $note   = mb_substr(trim((string)($_POST['note'] ?? '')), 0, 600);
+    $styles = si_catalog()['styles'];
+    $style  = isset($styles[$_POST['style'] ?? '']) ? $_POST['style'] : '';
+    $color  = ($style !== '' && in_array($_POST['color'] ?? '', $styles[$style]['colors'], true)) ? $_POST['color'] : '';
+    $shirtLine = $style !== '' ? $styles[$style]['name'] . ($color !== '' ? ", $color" : '') : '';
 
     if (!send_mockup_email($id, $r, $url, $ext !== 'pdf', $pieces, $total, $pack, $note)) {
         page('Email failed', '<div class="card bad">The mockup uploaded, but the email to the customer did not send. Email it to them from crew@ for now and tell Michael.</div>');
     }
-    $notes = trim((string)($f['Notes'] ?? '')) . "\n\n" . date('M j, g:ia') . ": mockup sent by Send mockup page [pack:$pack]" . ($note !== '' ? "\nNote to customer: $note" : '');
+    $notes = trim((string)($f['Notes'] ?? '')) . "\n\n" . date('M j, g:ia') . ": mockup sent by Send mockup page [pack:$pack]" . ($shirtLine !== '' ? " on $shirtLine" : '') . ($note !== '' ? "\nNote to customer: $note" : '');
     $upd = ['Mockup' => [['url' => $url, 'filename' => $name]], 'Mockup sent at' => gmdate('c'), 'Notes' => $notes];
     if (($f['Payment'] ?? '') !== 'Paid') { $upd += ['Status' => 'Mockup sent', 'Follow-ups sent' => 0]; }
     if ($pieces > 0) $upd['Mockup pieces'] = $pieces;
     if ($total > 0) $upd['Mockup price'] = $total;
     fn_patch($id, $upd);
-    fn_cache_put($id, ['Mockup URL' => $url, 'Mockup note' => $note]);   // our own link (Airtable's attachment links expire)
+    fn_cache_put($id, ['Mockup URL' => $url, 'Mockup note' => $note, 'Mockup style' => $style, 'Mockup color' => $color]);   // our own link (Airtable's attachment links expire)
     if ($total >= 1500 || $pieces >= 50) {
         fn_send(FN_OWNER, 'Big Standard Issue mockup sent: ' . ($f['Business Name'] ?? ''), "Mockup sent to " . ($f['Contact Name'] ?? '') . " (" . $f['Email'] . ")\nPieces: $pieces\nTotal: " . fn_money($total) . "\nMockup: $url\n\nWorth a personal call.");
     }
@@ -68,6 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         . '<p class="muted">Need to send a revised mockup? Use the same link again from the art@ email.</p>');
 }
 
+$cat = si_catalog()['styles'];
+$styleOpts = '';
+foreach ($cat as $key => $st) $styleOpts .= '<option value="' . $h($key) . '">' . $h($st['name']) . '</option>';
+$colorJson = json_encode(array_map(fn($st) => $st['colors'], $cat));
 $already = !empty($f['Mockup sent at']);
 $logo = $f['Logo file'][0]['url'] ?? '';
 $est = (int)($f['Estimated quantity'] ?? 0);
@@ -86,10 +95,14 @@ page('Send mockup: ' . ($f['Business Name'] ?? ''),
     . '<form class="card" method="post" enctype="multipart/form-data">'
     . '<input type="hidden" name="id" value="' . $h($id) . '"><input type="hidden" name="k" value="' . $h($k) . '">'
     . '<label for="m">Mockup file (JPG or PNG best, PDF ok, under 8 MB)</label><input id="m" type="file" name="mockup" accept=".png,.jpg,.jpeg,.pdf" required>'
+    . '<div class="row"><div><label for="st">Shirt in the mockup</label><select id="st" name="style">' . $styleOpts . '</select></div>'
+    . '<div><label>Shirt color</label><div id="sw"></div></div></div>'
     . (($f['Payment'] ?? '') === 'Paid' ? '' :
         '<label for="pk">Offer</label><select id="pk" name="pack"><option value="starter">Starter Crew Pack</option><option value="premium">Premium Crew Pack</option><option value="custom" selected>Custom order</option></select>'
         . '<div class="row"><div><label for="pc">Pieces</label><input id="pc" type="number" name="pieces" min="0" value="' . ($est ?: '') . '"></div>'
         . '<div><label for="tt">Total price, tax included</label><input id="tt" name="total" inputmode="decimal" placeholder="595.00"></div></div>')
     . '<label for="nt">Note to the customer (optional)</label><textarea id="nt" name="note" rows="3" placeholder="e.g. We matched your orange to the logo. Happy to try it on black too."></textarea>'
     . '<button class="btn" type="submit">Send mockup</button>'
-    . '<p class="muted">The customer gets it from crew@standardissueshirt.com. Replies come back to crew@.</p></form>');
+    . '<p class="muted">The customer gets it from crew@standardissueshirt.com. Replies come back to crew@.</p></form>'
+    . '<script src="/js/swatches.js"></script><script>(function(){var C=' . $colorJson . ',sel=document.getElementById("st"),box=document.getElementById("sw");'
+    . 'function draw(){SISwatch.picker(box,C[sel.value],"White",null,{name:"color"});}sel.addEventListener("change",draw);draw();})();</script>');
